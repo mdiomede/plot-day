@@ -601,6 +601,18 @@ function plantPoints(x, y) {
   return Math.max(0, base + companionBonus(x, y)); // enemies can zero a plant, never go negative
 }
 
+// What this plant WOULD earn once watered (current sun, neighbors assumed
+// watered too) — powers the on-tile points preview for planning.
+function pointsPreview(x, y) {
+  const p = state.grid[y][x].plant;
+  if (!p) return 0;
+  if (p.watered) return plantPoints(x, y);
+  const gap = Math.abs(state.sun[y][x] - p.def.sun);
+  if (gap >= 2) return 0;
+  const base = gap === 0 ? p.def.pts : Math.ceil(p.def.pts / 2);
+  return Math.max(0, base + potentialBonus(x, y));
+}
+
 function totalScore() {
   let sum = 0;
   for (let y = 0; y < H; y++)
@@ -1299,16 +1311,17 @@ function renderBoard() {
           }
           if (cell.plant.watered)
             t.insertAdjacentHTML("beforeend", `<span class="drop-badge">${em("1f4a7")}</span>`);
+          // bare ♥/⚠ marks adjacency in play; the points badge carries the math
           let chipNote = "";
           if (cell.plant.watered && net !== 0) {
             t.insertAdjacentHTML("beforeend",
-              `<span class="friend-badge${net < 0 ? " foe" : ""}">${net > 0 ? "♥+" + net : "⚠" + net}</span>`);
+              `<span class="friend-badge${net < 0 ? " foe" : ""}">${net > 0 ? "♥" : "⚠"}</span>`);
             chipNote = ` · ${net > 0 ? "♥ +" + net : "⚠ " + net + " (bad neighbors)"}`;
           } else if (!cell.plant.watered) {
             const pot = potentialBonus(x, y);
             if (pot !== 0) {
               t.insertAdjacentHTML("beforeend",
-                `<span class="friend-badge ghost${pot < 0 ? " foe" : ""}">${pot > 0 ? "♥+" + pot : "⚠" + pot}</span>`);
+                `<span class="friend-badge ghost${pot < 0 ? " foe" : ""}">${pot > 0 ? "♥" : "⚠"}</span>`);
               chipNote = ` · if watered: ${pot > 0 ? "♥ +" + pot : "⚠ " + pot}`;
             }
           }
@@ -1320,6 +1333,10 @@ function renderBoard() {
               ? " · watered at full price! Re-water to use the barrel's −1💧"
               : " · barrel −1💧";
           }
+          // live worth: real points when watered, projected when not
+          const pts = pointsPreview(x, y);
+          t.insertAdjacentHTML("beforeend",
+            `<span class="pts-badge${cell.plant.watered ? "" : " ghost"}${pts === 0 ? " zero" : ""}">${pts}</span>`);
           t.title = `${cell.plant.def.name}: ${statusLabel(status)}` +
             (chipNote ? "\n" + chipNote.replace(/^ · /, "") : "") +
             (zoneNote ? "\n" + zoneNote.replace(/^ · /, "") : "");
@@ -1569,7 +1586,6 @@ function showResults() {
     streakEl.innerHTML = `${em("1f525")} ${currentStreak()}-day streak · ${em("1f4da")} ${led.length} ${led.length === 1 ? "plot" : "plots"} grown`;
     streakEl.hidden = false;
   } else streakEl.hidden = true;
-  $("#share-text").textContent = buildShareText(score);
   $("#results-scrim").hidden = false;
 }
 
@@ -1581,40 +1597,50 @@ function refreshGoldUI() {
     score === state.gold ? `${em("1f3c5")} matched the bot's best!` :
     `skill ${Math.round((100 * score) / state.gold)}`;
   $("#bot-btn").disabled = !state.goldLayout;
-  $("#share-text").textContent = buildShareText(score);
+  state.lastShare = buildShareText(score); // raw text for the clipboard
+  $("#share-head").textContent = state.lastShare.split("\n").slice(0, 3).join("\n");
+  $("#share-grid").innerHTML = shareGridCells()
+    .map(r => `<div class="sg-row">${r.map(c => `<span>${c}</span>`).join("")}</div>`)
+    .join("");
+}
+
+// one emoji per tile, shared by the clipboard text and the visual preview
+function shareGridCells() {
+  const spoilerSafe = state.isDailyBoard;
+  const rows = [];
+  for (let y = 0; y < H; y++) {
+    const row = [];
+    for (let x = 0; x < W; x++) {
+      const c = state.grid[y][x];
+      const empty = state.sun[y][x] >= 2 ? "🟨" : "🟩";
+      if (c.obstacle) row.push(shareArt(c.obstacle));
+      else if (c.plant) {
+        const s = plantStatus(x, y);
+        row.push(spoilerSafe
+          ? (s === "thrive" ? "🌸" : s === "ok" ? "🌼" : "🥀")
+          : (s === "dead" ? "🥀" : c.plant.def.emoji));
+      }
+      else if (c.barrel) row.push(spoilerSafe ? empty : "🛢️");
+      else row.push(empty);
+    }
+    rows.push(row);
+  }
+  return rows;
 }
 
 function buildShareText(score) {
   const meta = SEASON_META[state.season];
-  // The daily share is spoiler-safe: blooms show how tiles fared, never
-  // which crop went where (everyone plays the same board). Practice plots
-  // are random, so they share in full detail.
-  const spoilerSafe = state.isDailyBoard;
-  let grid = "";
-  for (let y = 0; y < H; y++) {
-    for (let x = 0; x < W; x++) {
-      const c = state.grid[y][x];
-      const empty = state.sun[y][x] >= 2 ? "🟨" : "🟩";
-      if (c.obstacle) grid += shareArt(c.obstacle);
-      else if (c.plant) {
-        const s = plantStatus(x, y);
-        grid += spoilerSafe
-          ? (s === "thrive" ? "🌸" : s === "ok" ? "🌼" : "🥀")
-          : (s === "dead" ? "🥀" : c.plant.def.emoji);
-      }
-      else if (c.barrel) grid += spoilerSafe ? empty : "🛢️";
-      else grid += empty;
-    }
-    grid += "\n";
-  }
+  // The daily share is spoiler-safe (blooms, not crop identities) — see
+  // shareGridCells. Practice plots are random, so they share full detail.
+  const grid = shareGridCells().map(r => r.join("")).join("\n");
   const skill = score > state.gold ? "BEAT GOLD 🏆" : `skill ${Math.round((100 * score) / state.gold)}`;
   const streak = state.dayNum > 0 ? ` · 🔥${currentStreak()}` : "";
-  return `${state.seedLabel} · ${meta.label}${streak}\n🏆 ${score} pts · ${skill}\nGold ${state.gold} · Par ${state.par}\n${grid}`;
+  return `${state.seedLabel} · ${meta.label}${streak}\n🏆 ${score} pts · ${skill}\nGold ${state.gold} · Par ${state.par}\n${grid}\n`;
 }
 
 $("#copy-btn").addEventListener("click", async () => {
   try {
-    await navigator.clipboard.writeText($("#share-text").textContent);
+    await navigator.clipboard.writeText(state.lastShare || buildShareText(totalScore()));
     $("#copy-btn").textContent = "✅ Copied!";
     setTimeout(() => ($("#copy-btn").textContent = "📋 Copy result"), 1500);
   } catch { /* clipboard blocked on file:// in some browsers; text is selectable */ }
