@@ -103,7 +103,7 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 300px;
   gap: 0 18px;
-  max-width: 1080px;
+  max-width: 1110px;
   margin: 0 auto;
   padding: 8px 26px 40px;
 }
@@ -659,10 +659,10 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   list-style: none;
   margin: 2px auto 0;
   padding: 0;
-  max-width: 660px;
+  max-width: 724px; /* wide enough that every rule stays on one line per column */
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 7px 26px;
+  gap: 7px 18px;
   text-align: left;
   font-size: .82rem;
   line-height: 1.45;
@@ -690,8 +690,16 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   line-height: 1.2;
   text-align: center;
 }
-@media (max-width: 720px) {
+/* two guide columns only when each rule fits on one line; below that,
+   one comfortable column */
+@media (max-width: 1100px) {
   .guide { grid-template-columns: 1fr; max-width: 480px; }
+}
+
+/* ultra-narrow phones: the dock can't fit seven labeled buttons,
+   so fall back to icon-only tools */
+@media (max-width: 374px) {
+  .tools-panel .dock-label { display: none; }
 }
 
 /* dev / practice */
@@ -777,13 +785,13 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   }
 
   /* action bar: water chip + barrel + tools + finish in one row */
-  .tools-panel { display: flex; align-items: stretch; gap: 6px; margin-top: 8px; }
+  .tools-panel { display: flex; align-items: stretch; gap: 4px; margin-top: 8px; }
   .water-meter {
     margin: 0;
     gap: 3px;
     background: var(--paper);
     border-radius: 10px;
-    padding: 0 9px;
+    padding: 0 6px;
     flex: 0 0 auto;
   }
   .water-pips { display: none; }
@@ -793,15 +801,18 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   .tool-row { display: contents; }
   .tool-btn { padding: 7px 11px; font-size: 1rem; }
   .barrel-btn { width: auto; margin: 0; font-size: 1rem; }
-  /* icon-over-label dock buttons, echoing the sun-phase buttons */
+  /* icon-over-label dock buttons, echoing the sun-phase buttons;
+     min-width 0 lets the row compress instead of pushing Finish offscreen */
   .tools-panel .tool-btn {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 1px; padding: 4px 9px 3px;
+    gap: 1px; padding: 4px 4px 3px; min-width: 0;
+    flex: 0 0 auto; /* tools hug their content; Finish takes the rest */
   }
+  .finish-btn { min-width: 0; }
   .tools-panel .dock-label {
     display: block;
-    font-size: .56rem; font-weight: 800;
-    letter-spacing: .04em; text-transform: uppercase;
+    font-size: .52rem; font-weight: 800;
+    letter-spacing: .03em; text-transform: uppercase;
     color: var(--ink-soft);
   }
   .finish-btn { flex: 1; width: auto; padding: 8px 6px; font-size: 1rem; }

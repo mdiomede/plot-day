@@ -58,29 +58,29 @@
       <button id="tool-prune" class="tool-btn barrel-btn" title="Fell one tree or fence segment to open up sun.&#10;A felled tree is lost mushroom real estate.&#10;Once per garden. Clear regrows it.">🪓</button>
       <div class="tool-row">
         <button id="tool-water" class="tool-btn" title="Water a planted crop.&#10;Costs its 💧 number."><span class="tool-face"><img class="em" src="assets/emoji/watering-can.svg" alt=""><span class="long-label"> Water</span></span><small class="dock-label">water</small></button>
-        <button id="tool-shovel" class="tool-btn" title="Dig up a crop.&#10;Refunds the seed and its water."><span class="tool-face"><img class="em" src="assets/emoji/shovel.svg" alt=""><span class="long-label"> Dig up</span></span><small class="dock-label">dig</small></button>
+        <button id="tool-shovel" class="tool-btn" title="Dig up a crop or the rain barrel.&#10;Everything is refunded."><span class="tool-face"><img class="em" src="assets/emoji/shovel.svg" alt=""><span class="long-label"> Dig up</span></span><small class="dock-label">dig</small></button>
         <button id="tool-reset" class="tool-btn" title="Clear the whole garden and start this board over.&#10;Everything is refunded."><span class="tool-face"><img class="em" src="assets/emoji/1f9f9.svg" alt=""><span class="long-label"> Clear</span></span><small class="dock-label">clear</small></button>
       </div>
-      <button id="finish-btn" class="finish-btn"><img class="em" src="assets/emoji/1f31e.svg" alt=""> Finish<span class="long-label"> the day</span></button>
+      <button id="finish-btn" class="finish-btn"><span class="long-label"><img class="em" src="assets/emoji/1f31e.svg" alt=""> </span>Finish<span class="long-label"> the day</span></button>
     </div>
 
   </aside>
 
   <div class="field-notes">
       <div class="status-row">
-        <span class="status-chip"><span class="ring ring-thrive"></span><strong>Thriving</strong><em>perfect sun, watered · full pts</em></span>
-        <span class="status-chip"><span class="ring ring-ok"></span><strong>Hanging on</strong><em>watered, sun off by one · half pts</em></span>
-        <span class="status-chip"><span class="ring ring-dead"></span><strong>Doomed</strong><em>thirsty, or sun off by two · 0 pts</em></span>
+        <span class="status-chip"><span class="ring ring-thrive"></span><strong>Thriving:</strong><em>perfect sun, watered · full pts</em></span>
+        <span class="status-chip"><span class="ring ring-ok"></span><strong>Hanging on:</strong><em>sun off by one · half pts, rounded up</em></span>
+        <span class="status-chip"><span class="ring ring-dead"></span><strong>Doomed:</strong><em>thirsty, or sun off by two · 0 pts</em></span>
       </div>
       <ul class="guide">
         <li><img class="gi" src="assets/emoji/1f331.svg" alt=""><span><strong>Plant</strong> by tapping a seed card, then a tile.</span></li>
         <li><span class="gi gi-pip"></span><span><strong>Sun pips</strong> are a tile's sun; match exactly to thrive.</span></li>
         <li><img class="gi" src="assets/emoji/1f4a7.svg" alt=""><span><strong>Water is life</strong> — unwatered plants wilt.</span></li>
-        <li><img class="gi" src="assets/emoji/1f33b.svg" alt=""><span><strong>Tall crops</strong> shade once watered; two cast more.</span></li>
+        <li><img class="gi" src="assets/emoji/1f33b.svg" alt=""><span><strong>Tall crops</strong> cast shade once watered; two provide more.</span></li>
         <li><span class="gi gi-heart">♥</span><span><strong>Friends</strong> score +2 adjacent; <img class="em" src="assets/emoji/1f6ab.svg" alt="no"> <strong>enemies</strong> −2.</span></li>
         <li><img class="gi" src="assets/emoji/1f344.svg" alt=""><span><strong>Mushrooms</strong> love sitting beside trees.</span></li>
         <li><img class="gi" src="assets/emoji/1f6e2.svg" alt=""><span><strong>The barrel</strong> waters neighbors for 1 less <img class="em" src="assets/emoji/1f4a7.svg" alt="water">.</span></li>
-        <li><img class="gi" src="assets/emoji/shovel.svg" alt=""><span><strong>The shovel</strong> digs up a crop, refunding its cost.</span></li>
+        <li><img class="gi" src="assets/emoji/shovel.svg" alt=""><span><strong>The shovel</strong> digs up crops or the barrel, fully refunded.</span></li>
         <li><img class="gi" src="assets/emoji/1fa93.svg" alt=""><span><strong>Prune</strong> fells one tree or fence to open up sun.</span></li>
       </ul>
     </div>
@@ -92,8 +92,8 @@
         <button class="dev-btn" data-season="summer"><img class="em" src="assets/emoji/2600.svg" alt="summer"></button>
         <button class="dev-btn" data-season="fall"><img class="em" src="assets/emoji/1f342.svg" alt="fall"></button>
         <button class="dev-btn" data-season="winter"><img class="em" src="assets/emoji/2744.svg" alt="winter"></button>
-        <button class="dev-btn" id="random-btn"><img class="em" src="assets/emoji/1f3b2.svg" alt=""> random</button>
-        <button class="dev-btn" id="today-btn"><img class="em" src="assets/emoji/1f4c5.svg" alt=""> today</button>
+        <button class="dev-btn" id="random-btn"><img class="em" src="assets/emoji/1f3b2.svg" alt=""> Random</button>
+        <button class="dev-btn" id="today-btn"><img class="em" src="assets/emoji/1f4c5.svg" alt=""> Today</button>
       </div>
     </div>
 
@@ -116,7 +116,7 @@
     </div>
     <div id="results-tally" class="results-tally"></div>
     <div id="streak-line" class="results-tally" hidden></div>
-    <p class="par-hint">Par is plain sun-greedy play. Gold is the best our bot gardener found after tinkering all morning — match it and you've solved the day; beat it and you're better than the bot.</p>
+    <p class="par-hint">Par is plain sun-greedy play. Gold is the best our bot gardener found after tinkering all morning. Match it and you've solved the day; beat it and you're better than the bot.</p>
     <div class="share-text">
       <div id="share-head" class="share-head"></div>
       <div id="share-grid" class="share-grid"></div>

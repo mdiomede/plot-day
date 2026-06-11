@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.2.4"; // bump on each deploy so phones can verify updates
+const VERSION = "0.2.5"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -342,7 +342,12 @@ function restoreLockedDaily(e) {
   if (e.barrel) { state.grid[e.barrel.y][e.barrel.x].barrel = true; state.barrelStock = 0; }
   for (const c of e.cells) {
     const def = defs.find(d => d.id === c.id);
-    if (def) state.grid[c.y][c.x].plant = { def, watered: !!c.w, paid: c.p || 0 };
+    if (!def) continue;
+    state.grid[c.y][c.x].plant = { def, watered: !!c.w, paid: c.p || 0 };
+    // spend the seed from the packet, as live play did — otherwise the
+    // results tally counts the whole packet as "unplanted" after a reload
+    const slot = state.packet.find(s => s.def.id === c.id);
+    if (slot && slot.qty > 0) slot.qty--;
   }
   state.waterLeft = e.waterLeft ?? 0;
   state.resolved = true;
@@ -485,7 +490,7 @@ function generatePacket() {
   const totalWater = state.packet.reduce((n, s) => n + s.qty * s.def.water, 0);
   state.waterMax = Math.max(5, Math.round(totalWater * (0.65 + r() * 0.15)));
   state.waterLeft = state.waterMax;
-  state.barrelStock = 1; // one rain barrel per board: +3 water, costs a tile
+  state.barrelStock = 1; // one rain barrel per board: discounts neighbors, costs a tile
 }
 
 /* ---------- sun & shade ---------- */
@@ -1429,7 +1434,7 @@ function renderTools() {
   barrel.classList.toggle("is-selected", state.selected?.type === "barrel");
   barrel.disabled = state.barrelStock === 0 || state.resolved;
   barrel.innerHTML = (state.barrelStock > 0
-    ? `<span class="tool-face">${em("1f6e2")}<span class="long-label"> Rain barrel:</span> ${em("1f4a7")}−1<span class="long-label"> for neighbors</span></span>`
+    ? `<span class="tool-face">${em("1f6e2")}<span class="long-label"> Rain barrel: ${em("1f4a7")}−1 for neighbors</span></span>`
     : `<span class="tool-face">${em("1f6e2")}<span class="long-label"> Rain barrel</span> ✓</span>`)
     + `<small class="dock-label">barrel</small>`;
   const prune = $("#tool-prune");
@@ -1589,13 +1594,16 @@ function showResults() {
   $("#final-score").textContent = score;
   $("#par-score").textContent = state.par;
   $("#par-verdict").innerHTML =
-    score > state.par ? `beat it! ${em("1f31f")}` : score === state.par ? "matched!" : "";
+    score > state.par ? `Beat it! ${em("1f31f")}` : score === state.par ? "Matched!" : "";
   refreshGoldUI();
   const unplanted = state.packet.reduce((n, s) => n + s.qty, 0);
+  const tallyRow2 = [
+    ...(hearts ? [`♥ +${hearts} companions`] : []),
+    ...(unplanted ? [`${em("1f330")} ${unplanted} seeds unplanted`] : []),
+  ];
   $("#results-tally").innerHTML =
-    `${em("1f31f")} ${thrive} thriving · ${em("1f605")} ${ok} hanging on · ${em("1f480")} ${dead} lost` +
-    (hearts ? ` · ♥ +${hearts} companions` : "") +
-    (unplanted ? ` · ${em("1f330")} ${unplanted} seeds unplanted` : "");
+    `<div>${em("1f31f")} ${thrive} thriving · ${em("1f605")} ${ok} hanging on · ${em("1f480")} ${dead} lost</div>` +
+    (tallyRow2.length ? `<div>${tallyRow2.join(" · ")}</div>` : "");
   $("#replay-btn").hidden = state.dayNum === 0; // replays/practice can't re-replay
   const streakEl = $("#streak-line");
   if (state.dayNum > 0) {
@@ -1610,9 +1618,9 @@ function refreshGoldUI() {
   const score = totalScore();
   $("#gold-score").textContent = state.gold;
   $("#skill-line").innerHTML =
-    score > state.gold ? `${em("1f3c6")} you beat the bot!` :
-    score === state.gold ? `${em("1f3c5")} matched the bot's best!` :
-    `skill ${Math.round((100 * score) / state.gold)}`;
+    score > state.gold ? `${em("1f3c6")} You beat the bot!` :
+    score === state.gold ? `${em("1f3c5")} Matched the bot's best!` :
+    `Skill ${Math.round((100 * score) / state.gold)}`;
   $("#bot-btn").disabled = !state.goldLayout;
   state.lastShare = buildShareText(score); // raw text for the clipboard
   $("#share-head").textContent = state.lastShare.split("\n").slice(0, 3).join("\n");
@@ -1650,7 +1658,7 @@ function buildShareText(score) {
   // The daily share is spoiler-safe (blooms, not crop identities) — see
   // shareGridCells. Practice plots are random, so they share full detail.
   const grid = shareGridCells().map(r => r.join("")).join("\n");
-  const skill = score > state.gold ? "BEAT GOLD 🏆" : `skill ${Math.round((100 * score) / state.gold)}`;
+  const skill = score > state.gold ? "BEAT GOLD 🏆" : `Skill ${Math.round((100 * score) / state.gold)}`;
   const streak = state.dayNum > 0 ? ` · 🔥${currentStreak()}` : "";
   return `${state.seedLabel} · ${meta.label}${streak}\n🏆 ${score} pts · ${skill}\nGold ${state.gold} · Par ${state.par}\n${grid}\n`;
 }
@@ -1758,7 +1766,7 @@ async function buildPortrait() {
   const score = totalScore();
   ctx.textAlign = "right";
   ctx.fillStyle = "#b9552f";
-  ctx.fillText(`${score} pts · skill ${Math.round((100 * score) / state.gold)}`, cw - 28, ch + 64);
+  ctx.fillText(`${score} pts · Skill ${Math.round((100 * score) / state.gold)}`, cw - 28, ch + 64);
 }
 
 $("#portrait-btn").addEventListener("click", async () => {
