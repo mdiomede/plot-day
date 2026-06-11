@@ -1,0 +1,9 @@
+# not part of the served site
+.git
+.gitignore
+.assetsignore
+wrangler.jsonc
+PRODUCT.md
+DESIGN.md
+*.jfif
+Screenshot *.jpg
