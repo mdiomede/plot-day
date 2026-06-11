@@ -1609,7 +1609,7 @@ function buildShareText(score) {
   }
   const skill = score > state.gold ? "BEAT GOLD 🏆" : `skill ${Math.round((100 * score) / state.gold)}`;
   const streak = state.dayNum > 0 ? ` · 🔥${currentStreak()}` : "";
-  return `${state.seedLabel} · ${meta.label}\n🏆 ${score} pts · ${skill} · Gold ${state.gold} · Par ${state.par}${streak}\n${grid}`;
+  return `${state.seedLabel} · ${meta.label}${streak}\n🏆 ${score} pts · ${skill}\nGold ${state.gold} · Par ${state.par}\n${grid}`;
 }
 
 $("#copy-btn").addEventListener("click", async () => {
