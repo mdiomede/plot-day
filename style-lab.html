@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plot Day — style lab</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;800&family=Nunito:wght@600;800&display=swap" rel="stylesheet">
+<style>
+  body { margin:0; background:#f3ecdc; font-family:"Nunito",sans-serif; color:#4a3b2a; padding:28px 20px 60px; }
+  h1 { font-family:"Baloo 2",cursive; color:#3f6b35; margin:0 0 4px; }
+  .sub { color:#7a6a52; margin:0 0 26px; font-style:italic; }
+  .row { display:flex; gap:22px; flex-wrap:wrap; justify-content:center; }
+  .panel { width:360px; }
+  .panel h2 { font-family:"Baloo 2",cursive; font-size:1.15rem; margin:10px 0 2px; }
+  .panel p { font-size:.85rem; color:#7a6a52; margin:2px 0 0; line-height:1.45; }
+  svg.scene { width:100%; border-radius:16px; box-shadow:0 10px 26px rgba(74,59,42,.18); display:block; }
+</style>
+</head>
+<body>
+<h1>Style lab 🎨</h1>
+<p class="sub">One vignette, three owned directions — same shapes, different soul. All pure code.</p>
+
+<div class="row">
+
+<!-- ============================================================
+     A · SOFT GOUACHE — no outlines, layered tones, paper grain
+     ============================================================ -->
+<div class="panel">
+<svg class="scene" viewBox="0 0 360 270">
+  <defs>
+    <filter id="grainA"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" result="n"/>
+      <feColorMatrix in="n" type="matrix" values="0 0 0 0 0.30 0 0 0 0 0.24 0 0 0 0 0.14 0 0 0 0.5 0"/>
+      <feComposite operator="in" in2="SourceGraphic"/></filter>
+    <radialGradient id="skyA" cx="78%" cy="12%" r="90%">
+      <stop offset="0%" stop-color="#fff6da"/><stop offset="55%" stop-color="#f6e9c4"/><stop offset="100%" stop-color="#e9dcb4"/>
+    </radialGradient>
+  </defs>
+  <rect width="360" height="270" fill="url(#skyA)"/>
+  <circle cx="296" cy="40" r="26" fill="#ffd773"/>
+  <circle cx="296" cy="40" r="36" fill="#ffd773" opacity=".25"/>
+  <!-- ground -->
+  <path d="M0,118 C70,108 240,110 360,120 L360,270 L0,270 Z" fill="#9dbb6a"/>
+  <path d="M0,150 C110,140 250,146 360,150 L360,270 L0,270 Z" fill="#8fb05f"/>
+  <path d="M0,196 C120,188 260,192 360,194 L360,270 L0,270 Z" fill="#7fa355"/>
+  <!-- grass tufts: irregular, varied -->
+  <g fill="#a8c374" opacity=".8">
+    <path d="M40,176 q3,-10 5,0 q3,-8 5,0 Z"/><path d="M120,210 q3,-9 5,0 q3,-7 5,0 Z"/>
+    <path d="M226,168 q3,-9 5,0 q2,-7 4,0 Z"/><path d="M312,224 q3,-10 5,0 q3,-8 5,0 Z"/>
+    <path d="M78,238 q3,-9 5,0 q3,-7 5,0 Z"/>
+  </g>
+  <!-- cottage: no outlines, tone separation -->
+  <g>
+    <ellipse cx="282" cy="206" rx="62" ry="10" fill="#5d7742" opacity=".5"/>
+    <rect x="240" y="148" width="84" height="58" rx="4" fill="#f1e0bd"/>
+    <rect x="240" y="148" width="84" height="10" fill="#e2cda4"/>
+    <polygon points="232,152 282,108 332,152" fill="#c8654a"/>
+    <polygon points="232,152 282,108 332,152" fill="#b35138" opacity="0" />
+    <polygon points="282,108 332,152 318,152 282,120" fill="#b3503a"/>
+    <rect x="293" y="118" width="9" height="15" fill="#a8492f"/>
+    <rect x="288" y="170" width="16" height="36" rx="2" fill="#9a6a45"/>
+    <rect x="252" y="166" width="18" height="15" rx="2" fill="#cfe6ea"/>
+    <rect x="252" y="166" width="18" height="6" fill="#b8d4da"/>
+  </g>
+  <!-- tree: blobby canopy, light side / dark side, no line -->
+  <g>
+    <ellipse cx="78" cy="216" rx="44" ry="9" fill="#5d7742" opacity=".5"/>
+    <path d="M73,216 C71,196 71,180 74,166 L83,166 C86,182 85,198 84,216 Z" fill="#8a5a36"/>
+    <path d="M73,216 C71,196 71,180 74,166 L78,166 C77,186 77,200 78,216 Z" fill="#74482a"/>
+    <path d="M78,170 C44,170 36,138 58,124 C58,98 96,90 110,108 C134,104 142,134 124,148 C128,168 102,178 78,170 Z" fill="#6f9a4e"/>
+    <path d="M58,124 C58,98 96,90 110,108 C120,106 128,112 131,121 C112,108 84,108 70,128 C64,136 62,146 64,154 C48,148 46,132 58,124 Z" fill="#85ad60"/>
+    <path d="M124,148 C128,168 102,178 78,170 C94,172 112,166 118,152 Z" fill="#587e3d"/>
+  </g>
+  <!-- tomato plant on a soil mound -->
+  <g>
+    <ellipse cx="180" cy="232" rx="34" ry="11" fill="#7c5a36"/>
+    <ellipse cx="180" cy="229" rx="30" ry="9" fill="#93693e"/>
+    <path d="M180,228 C178,206 178,196 180,186" stroke="#4f7a38" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M180,206 C170,202 164,194 165,186 C175,188 180,196 180,206 Z" fill="#5f8f44"/>
+    <path d="M180,198 C190,194 197,186 196,178 C186,180 181,188 180,198 Z" fill="#6da04e"/>
+    <circle cx="169" cy="214" r="9" fill="#d8512e"/>
+    <circle cx="166.5" cy="211.5" r="3" fill="#e8744f"/>
+    <circle cx="192" cy="208" r="11" fill="#c9421f"/>
+    <circle cx="188.5" cy="204.5" r="3.6" fill="#e8744f"/>
+    <path d="M188,198 l4,-6 l4,6 Z" fill="#5f8f44"/>
+  </g>
+  <!-- unifying paper grain -->
+  <rect width="360" height="270" filter="url(#grainA)" opacity=".5"/>
+</svg>
+<h2>A · Soft gouache</h2>
+<p>No outlines anywhere — shapes separate by tone, like opaque paint. Irregular blobs, one warm light source, and a paper-grain wash that unifies every element. Cozy picture-book energy.</p>
+</div>
+
+<!-- ============================================================
+     B · STORYBOOK INK — wobbly hand line, flat warm fills
+     ============================================================ -->
+<div class="panel">
+<svg class="scene" viewBox="0 0 360 270">
+  <defs>
+    <filter id="wob" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="2" seed="7" result="w"/>
+      <feDisplacementMap in="SourceGraphic" in2="w" scale="3.5"/>
+    </filter>
+    <filter id="wob2" x="-5%" y="-5%" width="110%" height="110%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.06" numOctaves="2" seed="13" result="w"/>
+      <feDisplacementMap in="SourceGraphic" in2="w" scale="4.5"/>
+    </filter>
+  </defs>
+  <rect width="360" height="270" fill="#f6edd6"/>
+  <g filter="url(#wob2)">
+    <circle cx="296" cy="42" r="24" fill="#ffd06a" stroke="#46351f" stroke-width="2.6"/>
+    <g stroke="#46351f" stroke-width="2.2" stroke-linecap="round">
+      <line x1="296" y1="6" x2="296" y2="14"/><line x1="296" y1="70" x2="296" y2="78"/>
+      <line x1="262" y1="42" x2="270" y2="42"/><line x1="322" y1="42" x2="330" y2="42"/>
+      <line x1="272" y1="18" x2="278" y2="24"/><line x1="314" y1="60" x2="320" y2="66"/>
+    </g>
+  </g>
+  <g filter="url(#wob)">
+    <path d="M0,122 C90,112 250,114 360,122 L360,270 L0,270 Z" fill="#a9c177" stroke="#46351f" stroke-width="2.8"/>
+    <path d="M0,196 C120,190 260,192 360,196" fill="none" stroke="#46351f" stroke-width="1.6" opacity=".4"/>
+    <!-- cottage -->
+    <rect x="240" y="148" width="84" height="58" fill="#f3e2bf" stroke="#46351f" stroke-width="3"/>
+    <polygon points="230,152 282,106 334,152" fill="#cf6b4a" stroke="#46351f" stroke-width="3" stroke-linejoin="round"/>
+    <rect x="293" y="116" width="10" height="17" fill="#b3503a" stroke="#46351f" stroke-width="2.4"/>
+    <rect x="288" y="170" width="16" height="36" fill="#9a6a45" stroke="#46351f" stroke-width="2.6"/>
+    <rect x="252" y="164" width="19" height="16" fill="#cfe6ea" stroke="#46351f" stroke-width="2.6"/>
+    <line x1="261.5" y1="164" x2="261.5" y2="180" stroke="#46351f" stroke-width="1.8"/>
+    <!-- tree -->
+    <path d="M74,216 C72,194 72,180 75,166 L84,166 C86,184 85,200 84,216 Z" fill="#8a5a36" stroke="#46351f" stroke-width="2.8"/>
+    <path d="M79,170 C46,172 36,140 58,126 C56,100 94,88 110,108 C136,102 146,134 124,150 C130,170 102,180 79,170 Z" fill="#7da75a" stroke="#46351f" stroke-width="3"/>
+    <path d="M62,138 C70,128 86,124 96,128" fill="none" stroke="#46351f" stroke-width="1.6" opacity=".5"/>
+    <path d="M96,148 C106,142 116,142 122,146" fill="none" stroke="#46351f" stroke-width="1.6" opacity=".5"/>
+    <!-- tomato plant -->
+    <ellipse cx="180" cy="231" rx="32" ry="10" fill="#9a6c42" stroke="#46351f" stroke-width="2.6"/>
+    <path d="M180,227 C178,206 178,196 180,186" stroke="#46351f" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <path d="M180,206 C168,202 162,193 164,185 C175,187 180,196 180,206 Z" fill="#6da04e" stroke="#46351f" stroke-width="2.4"/>
+    <path d="M180,198 C191,194 198,185 196,177 C186,179 181,188 180,198 Z" fill="#6da04e" stroke="#46351f" stroke-width="2.4"/>
+    <circle cx="168" cy="214" r="9" fill="#e0563a" stroke="#46351f" stroke-width="2.6"/>
+    <circle cx="193" cy="208" r="11" fill="#d8472a" stroke="#46351f" stroke-width="2.6"/>
+    <path d="M189,197 l4,-7 l4,7" fill="none" stroke="#46351f" stroke-width="2.2"/>
+  </g>
+</svg>
+<h2>B · Storybook ink</h2>
+<p>One warm ink line around everything — but wobbled by a hand-tremor filter so no line is ruler-straight, with sketchy interior detail strokes. Reads as drawn, not generated. Quentin Blake meets seed catalog.</p>
+</div>
+
+<!-- ============================================================
+     C · CUT PAPER — layered shapes, soft real shadows, no lines
+     ============================================================ -->
+<div class="panel">
+<svg class="scene" viewBox="0 0 360 270">
+  <defs>
+    <filter id="lift1"><feDropShadow dx="0" dy="2.5" stdDeviation="2.5" flood-color="#3c2e1a" flood-opacity=".30"/></filter>
+    <filter id="lift2"><feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#3c2e1a" flood-opacity=".28"/></filter>
+  </defs>
+  <rect width="360" height="270" fill="#f0e6cd"/>
+  <circle cx="296" cy="42" r="25" fill="#ffd06a" filter="url(#lift1)"/>
+  <circle cx="296" cy="42" r="17" fill="#ffe199"/>
+  <!-- ground layers like torn paper strips -->
+  <path d="M0,120 C80,112 260,112 360,122 L360,270 L0,270 Z" fill="#a3bd72" filter="url(#lift2)"/>
+  <path d="M0,168 C110,160 240,164 360,166 L360,270 L0,270 Z" fill="#93b164" filter="url(#lift1)"/>
+  <path d="M0,216 C140,210 250,212 360,214 L360,270 L0,270 Z" fill="#84a356" filter="url(#lift1)"/>
+  <!-- cottage: stacked paper pieces -->
+  <g filter="url(#lift2)">
+    <rect x="240" y="148" width="84" height="58" rx="3" fill="#f5e5c2"/>
+    <rect x="240" y="148" width="84" height="12" rx="3" fill="#e8d3ab"/>
+  </g>
+  <polygon points="230,152 282,106 334,152" fill="#d06a48" filter="url(#lift2)"/>
+  <polygon points="282,106 334,152 308,152 282,118" fill="#bb5536"/>
+  <rect x="288" y="170" width="16" height="36" rx="2" fill="#9a6a45" filter="url(#lift1)"/>
+  <rect x="252" y="164" width="19" height="16" rx="2" fill="#cfe6ea" filter="url(#lift1)"/>
+  <!-- tree: three stacked canopy papers -->
+  <path d="M74,216 C72,194 72,180 76,166 L84,166 C86,184 85,200 84,216 Z" fill="#8a5a36" filter="url(#lift1)"/>
+  <ellipse cx="96" cy="142" rx="34" ry="28" fill="#6f9a4e" filter="url(#lift2)"/>
+  <ellipse cx="66" cy="138" rx="26" ry="23" fill="#7da75a" filter="url(#lift1)"/>
+  <ellipse cx="86" cy="118" rx="24" ry="20" fill="#8cb468" filter="url(#lift1)"/>
+  <!-- tomato plant -->
+  <ellipse cx="180" cy="231" rx="32" ry="10" fill="#8d6238" filter="url(#lift1)"/>
+  <path d="M177,229 C176,208 177,196 180,186 L183,186 C182,200 182,214 183,229 Z" fill="#557d3c" filter="url(#lift1)"/>
+  <path d="M180,206 C168,202 162,193 164,185 C175,187 180,196 180,206 Z" fill="#699c49" filter="url(#lift1)"/>
+  <path d="M180,198 C191,194 198,185 196,177 C186,179 181,188 180,198 Z" fill="#76aa55" filter="url(#lift1)"/>
+  <circle cx="168" cy="214" r="9" fill="#df5638" filter="url(#lift1)"/>
+  <circle cx="193" cy="208" r="11" fill="#d3431f" filter="url(#lift2)"/>
+  <circle cx="189" cy="204" r="3.6" fill="#ef7b54"/>
+  <path d="M188,198 l5,-7 l5,7 Z" fill="#699c49"/>
+</svg>
+<h2>C · Cut paper</h2>
+<p>No lines, no grain — depth does all the work. Every shape is a paper layer with a soft real shadow, stacked like a collage. Tactile and modern; the whole board would feel like a diorama you reach into.</p>
+</div>
+
+</div>
+</body>
+</html>

@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Plot Day — a tiny daily garden puzzle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700;800&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="masthead">
+  <div class="title-block">
+    <h1>Plot&nbsp;Day <img class="em em-lg" src="assets/emoji/1f331.svg" alt=""></h1>
+    <p class="tagline">grow a little garden, every day</p>
+  </div>
+  <div class="day-block">
+    <span id="season-badge" class="season-badge"></span>
+    <span id="day-label" class="day-label"></span>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ============ BOARD ============ -->
+  <section class="board-wrap" id="board-wrap">
+    <div class="sun-arc">
+      <button class="phase-btn" data-view="am"   title="Morning sun (from the east)"><img class="em" src="assets/emoji/1f305.svg" alt=""><small>morning</small></button>
+      <button class="phase-btn" data-view="noon" title="Midday sun (overhead)"><img class="em" src="assets/emoji/2600.svg" alt=""><small>midday</small></button>
+      <button class="phase-btn" data-view="pm"   title="Afternoon sun (from the west)"><img class="em" src="assets/emoji/1f307.svg" alt=""><small>afternoon</small></button>
+      <button class="phase-btn is-active" data-view="day" title="Total sun hours"><img class="em" src="assets/emoji/1f552.svg" alt=""><small>all day</small></button>
+    </div>
+    <p class="arc-label" id="arc-label"></p>
+    <div id="board" class="board" data-view="day"></div>
+  </section>
+
+  <!-- ============ SIDEBAR (desktop) / BOTTOM DOCK (mobile) ============ -->
+  <aside class="sidebar">
+
+    <div class="panel packet-panel">
+      <h2>Seed packet</h2>
+      <div id="packet" class="packet"></div>
+    </div>
+
+    <div class="panel tools-panel">
+      <div class="water-meter">
+        <span class="water-label"><span class="short-label"><img class="em" src="assets/emoji/1f4a7.svg" alt=""></span><span class="long-label">Water</span></span>
+        <span class="water-count" id="water-count"></span>
+        <div class="water-pips" id="water-pips"></div>
+      </div>
+      <button id="tool-barrel" class="tool-btn barrel-btn" title="Place the rain barrel on an empty tile.&#10;Adjacent plants cost 1 less water: cheap crops drink free.&#10;One per garden.">🛢️</button>
+      <button id="tool-prune" class="tool-btn barrel-btn" title="Fell one tree or fence segment to open up sun.&#10;A felled tree is lost mushroom real estate.&#10;Once per garden. Clear regrows it.">🪓</button>
+      <div class="tool-row">
+        <button id="tool-water" class="tool-btn" title="Water a planted crop.&#10;Costs its 💧 number."><img class="em" src="assets/emoji/1f6bf.svg" alt=""><span class="long-label"> Water</span></button>
+        <button id="tool-shovel" class="tool-btn" title="Dig up a crop.&#10;Refunds the seed and its water."><img class="em" src="assets/emoji/26cf.svg" alt=""><span class="long-label"> Dig up</span></button>
+        <button id="tool-reset" class="tool-btn" title="Clear the whole garden and start this board over.&#10;Everything is refunded."><img class="em" src="assets/emoji/1f9f9.svg" alt=""><span class="long-label"> Clear</span></button>
+      </div>
+      <button id="finish-btn" class="finish-btn"><img class="em" src="assets/emoji/1f31e.svg" alt=""> Finish<span class="long-label"> the day</span></button>
+    </div>
+
+  </aside>
+
+  <div class="field-notes">
+      <div class="status-row">
+        <span class="status-chip"><span class="ring ring-thrive"></span><strong>Thriving</strong><em>perfect sun, watered · full pts</em></span>
+        <span class="status-chip"><span class="ring ring-ok"></span><strong>Hanging on</strong><em>watered, sun off by one · half pts</em></span>
+        <span class="status-chip"><span class="ring ring-dead"></span><strong>Doomed</strong><em>thirsty, or sun off by two · 0 pts</em></span>
+      </div>
+      <ul class="guide">
+        <li><img class="gi" src="assets/emoji/1f331.svg" alt=""><span><strong>Plant:</strong> pick a seed card, then tap a tile.</span></li>
+        <li><span class="gi gi-pip"></span><span><strong>Sun pips</strong> show a tile's daily sun. Match the crop's need exactly to thrive.</span></li>
+        <li><img class="gi" src="assets/emoji/1f4a7.svg" alt=""><span><strong>Water is life:</strong> unwatered plants wilt at day's end.</span></li>
+        <li><img class="gi" src="assets/emoji/1f33b.svg" alt=""><span><strong>Tall crops</strong> cast shade once watered; two together form a taller canopy.</span></li>
+        <li><span class="gi gi-heart">♥</span><span><strong>Friends</strong> score +2 side by side; <img class="em" src="assets/emoji/1f6ab.svg" alt="no"> <strong>enemies</strong> cost −2. Pairings are on the seed cards.</span></li>
+        <li><img class="gi" src="assets/emoji/1f344.svg" alt=""><span><strong>Mushrooms</strong> love sitting beside trees.</span></li>
+        <li><img class="gi" src="assets/emoji/1f6e2.svg" alt=""><span><strong>The barrel</strong> waters adjacent plants for 1 less <img class="em" src="assets/emoji/1f4a7.svg" alt="water">.</span></li>
+        <li><img class="gi" src="assets/emoji/1fa93.svg" alt=""><span><strong>Prune</strong> fells one tree or fence to open up sun.</span></li>
+      </ul>
+    </div>
+
+    <div class="panel dev-panel">
+      <h2>Practice plots</h2>
+      <div class="dev-row">
+        <button class="dev-btn" data-season="spring"><img class="em" src="assets/emoji/1f338.svg" alt="spring"></button>
+        <button class="dev-btn" data-season="summer"><img class="em" src="assets/emoji/2600.svg" alt="summer"></button>
+        <button class="dev-btn" data-season="fall"><img class="em" src="assets/emoji/1f342.svg" alt="fall"></button>
+        <button class="dev-btn" data-season="winter"><img class="em" src="assets/emoji/2744.svg" alt="winter"></button>
+        <button class="dev-btn" id="random-btn"><img class="em" src="assets/emoji/1f3b2.svg" alt=""> random</button>
+        <button class="dev-btn" id="today-btn"><img class="em" src="assets/emoji/1f4c5.svg" alt=""> today</button>
+      </div>
+    </div>
+</main>
+
+<!-- ============ RESULTS ============ -->
+<div class="results-scrim" id="results-scrim" hidden>
+  <div class="results-card">
+    <h2 id="results-title">Day's end <img class="em" src="assets/emoji/1f319.svg" alt=""></h2>
+    <div class="score-line">
+      <div class="big-score"><span id="final-score">0</span><small>points</small></div>
+      <div class="par-score">
+        Par <span id="par-score">0</span> <span id="par-verdict"></span><br>
+        Gold <span id="gold-score">0</span> · <span id="skill-line"></span>
+      </div>
+    </div>
+    <div id="results-tally" class="results-tally"></div>
+    <div id="streak-line" class="results-tally" hidden></div>
+    <p class="par-hint">Par is plain sun-greedy play. Gold is the best our bot gardener found after tinkering all morning — match it and you've solved the day; beat it and you're better than the bot.</p>
+    <pre id="share-text" class="share-text"></pre>
+    <div class="results-actions">
+      <button id="copy-btn" class="finish-btn"><img class="em" src="assets/emoji/1f4cb.svg" alt=""> Copy result</button>
+      <button id="portrait-btn" class="tool-btn"><img class="em" src="assets/emoji/1f5bc.svg" alt=""> Garden portrait</button>
+      <button id="bot-btn" class="tool-btn" disabled><img class="em" src="assets/emoji/1f916.svg" alt=""> See the bot's garden</button>
+      <button id="back-btn" class="tool-btn"><img class="em" src="assets/emoji/1f440.svg" alt=""> Look at garden</button>
+      <button id="replay-btn" class="tool-btn" hidden><img class="em" src="assets/emoji/1f501.svg" alt=""> Replay this board (practice)</button>
+      <button id="again-btn" class="tool-btn"><img class="em" src="assets/emoji/1f3b2.svg" alt=""> Another plot</button>
+    </div>
+  </div>
+</div>
+
+<button class="bot-banner" id="bot-banner" hidden></button>
+
+<div class="results-scrim" id="portrait-scrim" hidden>
+  <div class="portrait-card">
+    <canvas id="portrait-canvas"></canvas>
+    <div class="results-actions">
+      <button id="portrait-save" class="finish-btn"><img class="em" src="assets/emoji/2b07.svg" alt=""> Save image</button>
+      <button id="portrait-close" class="tool-btn">Back</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
