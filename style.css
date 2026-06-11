@@ -460,6 +460,8 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   color: #fff8e2;
 }
 .tile .pts-badge.zero { background: rgba(146, 50, 30, .85); }
+/* after Finish, the garden is for admiring, not auditing */
+.board.resolved .pts-badge { display: none; }
 
 .bot-banner {
   position: fixed;
