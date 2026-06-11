@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.3.0"; // bump on each deploy so phones can verify updates
+const VERSION = "0.4.0"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -203,6 +203,7 @@ const state = {
   selected: null,    // {type:'seed', idx} | {type:'water'} | {type:'shovel'}
   resolved: false,
   par: 0,
+  tutorial: null,    // { step } while the guided tutorial is running
 };
 
 /* ---------- generation ---------- */
@@ -1260,6 +1261,7 @@ function renderAll() {
   renderPacket();
   renderWater();
   renderTools();
+  tutorialRefresh(); // re-renders wipe the highlight; re-anchor the callout
 }
 
 function renderHeader() {
@@ -1383,6 +1385,7 @@ function renderPacket() {
     const d = slot.def;
     const btn = document.createElement("button");
     btn.className = "seed-card";
+    btn.dataset.crop = d.id; // lets the tutorial point at a specific card
     if (d.why) btn.title = d.why.replace(/\. /g, ".\n"); // one sentence per line
     if (state.selected?.type === "seed" && state.selected.idx === idx) btn.classList.add("is-selected");
     btn.disabled = slot.qty === 0 || state.resolved;
@@ -1410,6 +1413,13 @@ function renderPacket() {
       </span>
       <span class="seed-qty">×${slot.qty}</span>`;
     btn.addEventListener("click", () => {
+      if (state.tutorial) { // scripted: only the asked-for seed, no deselect
+        if (!tutExpect("seed", d.id)) return tutNudge();
+        state.selected = { type: "seed", idx };
+        renderPacket(); renderTools();
+        tutAdvance();
+        return;
+      }
       state.selected = (state.selected?.type === "seed" && state.selected.idx === idx)
         ? null : { type: "seed", idx };
       renderPacket(); renderTools();
@@ -1450,6 +1460,7 @@ function renderTools() {
 
 function onTileClick(x, y) {
   if (state.resolved) return;
+  if (state.tutorial && !tutTileOk(x, y)) return tutNudge(); // scripted tile only
   const cell = state.grid[y][x];
   const sel = state.selected;
   if (!sel) return;
@@ -1463,12 +1474,14 @@ function onTileClick(x, y) {
     state.selected = null;
     recomputeSun();
     renderAll();
+    tutAdvance();
   } else if (sel.type === "barrel" && !cell.plant && !cell.barrel) {
     if (state.barrelStock === 0) return;
     cell.barrel = true;
     state.barrelStock--;
     state.selected = null;
     renderAll();
+    tutAdvance();
   } else if (sel.type === "seed" && !cell.plant && !cell.barrel) {
     const slot = state.packet[sel.idx];
     if (slot.qty === 0) return;
@@ -1477,6 +1490,7 @@ function onTileClick(x, y) {
     if (slot.def.tall) recomputeSun();
     if (slot.qty === 0) state.selected = null;
     renderAll();
+    tutAdvance();
   } else if (sel.type === "water" && cell.plant) {
     if (cell.plant.watered) {
       cell.plant.watered = false;
@@ -1491,6 +1505,7 @@ function onTileClick(x, y) {
     }
     if (cell.plant.def.tall) recomputeSun(); // watering a tall raises its shadow
     renderBoard(); renderWater();
+    tutAdvance();
   } else if (sel.type === "shovel" && cell.barrel) {
     // removing the barrel un-waters neighbors that enjoyed its discount,
     // so the discount can't be farmed by re-placing the barrel elsewhere
@@ -1519,8 +1534,9 @@ function onTileClick(x, y) {
   }
 }
 
-// Themed stand-in for window.confirm — same card the tutorial will use.
-function gardenConfirm({ text, yes = "Do it", no = "Never mind" }) {
+// Themed stand-in for window.confirm — the tutorial's bookend cards use it
+// too (with dismiss off, so a stray scrim tap can't skip the tour).
+function gardenConfirm({ text, yes = "Do it", no = "Never mind", dismiss = true }) {
   return new Promise(resolve => {
     $("#confirm-text").textContent = text;
     $("#confirm-yes").textContent = yes;
@@ -1529,17 +1545,29 @@ function gardenConfirm({ text, yes = "Do it", no = "Never mind" }) {
     const finish = val => { scrim.hidden = true; resolve(val); };
     $("#confirm-yes").onclick = () => finish(true);
     $("#confirm-no").onclick = () => finish(false);
-    scrim.onclick = e => { if (e.target === scrim) finish(false); };
+    scrim.onclick = e => { if (dismiss && e.target === scrim) finish(false); };
     scrim.hidden = false;
   });
 }
 
-$("#tool-barrel").addEventListener("click", () => {
-  state.selected = state.selected?.type === "barrel" ? null : { type: "barrel" };
+// One handler for every pick-up-a-tool button. In the tutorial only the
+// scripted tool answers, and it can't be put back down mid-lesson.
+function selectTool(name) {
+  if (state.tutorial) {
+    if (!tutExpect("tool", name)) return tutNudge();
+    state.selected = { type: name };
+    renderPacket(); renderTools();
+    tutAdvance();
+    return;
+  }
+  state.selected = state.selected?.type === name ? null : { type: name };
   renderPacket(); renderTools();
-});
+}
+
+$("#tool-barrel").addEventListener("click", () => selectTool("barrel"));
 $("#tool-reset").addEventListener("click", async () => {
   if (state.resolved) return;
+  if (state.tutorial) return tutNudge();
   const touched = state.grid.flat().some(c => c.plant || c.barrel) || state.pruneStock === 0;
   if (!touched) return;
   const ok = await gardenConfirm({
@@ -1566,18 +1594,9 @@ $("#tool-reset").addEventListener("click", async () => {
   renderAll();
 });
 
-$("#tool-water").addEventListener("click", () => {
-  state.selected = state.selected?.type === "water" ? null : { type: "water" };
-  renderPacket(); renderTools();
-});
-$("#tool-prune").addEventListener("click", () => {
-  state.selected = state.selected?.type === "prune" ? null : { type: "prune" };
-  renderPacket(); renderTools();
-});
-$("#tool-shovel").addEventListener("click", () => {
-  state.selected = state.selected?.type === "shovel" ? null : { type: "shovel" };
-  renderPacket(); renderTools();
-});
+$("#tool-water").addEventListener("click", () => selectTool("water"));
+$("#tool-prune").addEventListener("click", () => selectTool("prune"));
+$("#tool-shovel").addEventListener("click", () => selectTool("shovel"));
 
 document.querySelectorAll(".phase-btn").forEach(btn => {
   btn.addEventListener("click", () => {
@@ -1591,6 +1610,14 @@ document.querySelectorAll(".phase-btn").forEach(btn => {
 
 $("#finish-btn").addEventListener("click", () => {
   if (playerSnap) { exitBotView(); return; } // never score the bot's garden as yours
+  if (state.tutorial) { // the tutorial ends on its own card, not the results screen
+    if (!tutExpect("finish")) return tutNudge();
+    state.resolved = true;
+    state.selected = null;
+    renderAll();
+    tutAdvance();
+    return;
+  }
   if (state.resolved) { showResults(); return; } // restored locked days repopulate too
   state.resolved = true;
   state.selected = null;
@@ -1883,13 +1910,249 @@ $("#replay-btn").addEventListener("click", () => {
 /* ---------- practice / dev buttons ---------- */
 
 document.querySelectorAll(".dev-btn[data-season]").forEach(btn =>
-  btn.addEventListener("click", () => newGame({ daily: false, season: btn.dataset.season })));
-$("#random-btn").addEventListener("click", () => newGame({ daily: false }));
-$("#today-btn").addEventListener("click", () => newGame({ daily: true }));
+  btn.addEventListener("click", () => {
+    if (state.tutorial) return tutNudge(); // mid-lesson, the exit is the skip link
+    newGame({ daily: false, season: btn.dataset.season });
+  }));
+$("#random-btn").addEventListener("click", () => {
+  if (state.tutorial) return tutNudge();
+  newGame({ daily: false });
+});
+$("#today-btn").addEventListener("click", () => {
+  if (state.tutorial) return tutNudge();
+  newGame({ daily: true });
+});
+
+/* ---------- first-visit guided tutorial ----------
+   Teach by doing, on a hand-built scripted board — never the real daily,
+   so learning can't spend anyone's one scored attempt. Each step
+   highlights exactly one element (tile, seed card, or tool) with an
+   anchored paper-card callout; every other action just nudges. The whole
+   tour: core loop -> companions -> mushrooms & trees -> rain barrel ->
+   prune -> finish. Skippable at any step, replayable from the footer. */
+
+// 7x5 summer yard, "mid" sun arc. Hand-placed so the lessons line up:
+// (4,1) full sun for the tomato, (4,2) 2-sun beside it for basil, (1,2) a
+// 0-sun nook between two trees for the mushroom, (4,4) 1-sun beside the
+// barrel spot (3,4) for lettuce, and the fence at (5,3) shades (6,3) —
+// prune it and a full-sun corner opens for the last tomato.
+const TUT_OBSTACLES = [ // [y][x]
+  [null, null, null, null, null, null, null],
+  [null, null, null, null, null, null, null],
+  ["tree", null, "tree", null, null, null, null],
+  [null, "house", "house", null, null, "fence", null],
+  [null, "house", "house", null, null, "fence", null],
+];
+
+// type "seed"/"tool": tap that card or button (selection is forced, no
+// deselect). type "tile": tap tile (x,y) — the action comes from whatever
+// the previous step put in hand. type "finish": the Finish button.
+const TUT_STEPS = [
+  { type: "seed", id: "tomato",
+    text: `Every seed card shows the sun it needs. Tomatoes crave <b>full sun</b> — ${em("2600")}●●●. Tap the <b>tomato</b> to pick it up.` },
+  { type: "tile", x: 4, y: 1,
+    text: `See this tile's <b>3 sun pips</b>? Full sun all day — a perfect match. Tap it to plant your tomato.` },
+  { type: "tool", id: "water",
+    text: `<b>Water is life</b> — an unwatered plant wilts by sundown. Tap the <b>watering can</b>.` },
+  { type: "tile", x: 4, y: 1,
+    text: `Give the tomato a drink. Its card says ${em("1f4a7")}2, so it drinks 2 of your 6 water.` },
+  { type: "seed", id: "basil",
+    text: `Thriving! 🌟 Now — crops have <b>friends</b>. Basil keeps the bugs off tomatoes. Tap the <b>basil</b>.` },
+  { type: "tile", x: 4, y: 2,
+    text: `Basil wants <b>2 sun</b>, and the tree shades this spot every afternoon — exactly 2 pips. And its tomato friend is right next door.` },
+  { type: "tool", id: "water",
+    text: `You know the rhythm — can first.` },
+  { type: "tile", x: 4, y: 2,
+    text: `Water the basil (${em("1f4a7")}1) and watch the <b>♥</b> appear: friends side by side earn <b>+2 each</b>.` },
+  { type: "seed", id: "mushroom",
+    text: `Mushrooms are the odd ones out: they want <b>no sun at all</b>. Tap the <b>mushroom</b>.` },
+  { type: "tile", x: 1, y: 2,
+    text: `This nook between the trees never sees the sun — <b>0 pips</b>. Better still, mushrooms <b>love trees</b>: +2 for each one beside them.` },
+  { type: "tool", id: "water",
+    text: `Even mushrooms get thirsty.` },
+  { type: "tile", x: 1, y: 2,
+    text: `A little drink (${em("1f4a7")}1).` },
+  { type: "tool", id: "barrel",
+    text: `You get one <b>rain barrel</b> a day. Crops planted beside it cost <b>1 less ${em("1f4a7")}</b> to water. Tap the barrel.` },
+  { type: "tile", x: 3, y: 4,
+    text: `Set it down here — we'll plant its neighbor next.` },
+  { type: "seed", id: "lettuce",
+    text: `Lettuce is easygoing: 1 sun, ${em("1f4a7")}1. Tap the <b>lettuce</b>.` },
+  { type: "tile", x: 4, y: 4,
+    text: `One pip of sun — just enough. And it's right beside the barrel…` },
+  { type: "tool", id: "water",
+    text: `Once more with the can.` },
+  { type: "tile", x: 4, y: 4,
+    text: `Water it — <b>free!</b> The barrel covers the cost.` },
+  { type: "tool", id: "prune",
+    text: `One last tool: the axe <b>fells a single tree or fence</b> each day to open up sun. (Spare the trees — mushrooms would miss them.) Tap <b>prune</b>.` },
+  { type: "tile", x: 5, y: 3,
+    text: `This fence shades the corner behind it all afternoon. Chop it down.` },
+  { type: "seed", id: "tomato",
+    text: `Look at that corner now — <b>full sun</b>. And you have one tomato left…` },
+  { type: "tile", x: 6, y: 3,
+    text: `Plant it in the sunshine you just made.` },
+  { type: "tool", id: "water",
+    text: `Last job for the can.` },
+  { type: "tile", x: 6, y: 3,
+    text: `Your final 2 ${em("1f4a7")} — a garden with nothing wasted.` },
+  { type: "finish",
+    text: `That's the whole craft: sun, water, friends, barrel, axe. Tap <b>Finish</b> to see how your garden grew.` },
+];
+
+function tutExpect(type, id) {
+  const s = TUT_STEPS[state.tutorial.step];
+  return s.type === type && (id === undefined || s.id === id);
+}
+function tutTileOk(x, y) {
+  const s = TUT_STEPS[state.tutorial.step];
+  return s.type === "tile" && s.x === x && s.y === y;
+}
+function tutTargetEl(s) {
+  if (s.type === "seed") return document.querySelector(`#packet .seed-card[data-crop="${s.id}"]`);
+  if (s.type === "tool") return $("#tool-" + s.id);
+  if (s.type === "tile") return boardEl.querySelector(`.tile[data-x="${s.x}"][data-y="${s.y}"]`);
+  return $("#finish-btn");
+}
+
+// a stray tap shakes the callout: "over here"
+function tutNudge() {
+  const pop = $("#tutor-pop");
+  if (pop.hidden) return;
+  pop.classList.remove("nudge");
+  void pop.offsetWidth; // restart the animation
+  pop.classList.add("nudge");
+}
+
+function tutAdvance() {
+  if (!state.tutorial) return;
+  state.tutorial.step++;
+  if (state.tutorial.step >= TUT_STEPS.length) return tutComplete();
+  tutorialRefresh();
+}
+
+function tutorialRefresh() {
+  const pop = $("#tutor-pop");
+  document.querySelectorAll(".tutor-target").forEach(el => el.classList.remove("tutor-target"));
+  if (!state.tutorial) { pop.hidden = true; return; }
+  const s = TUT_STEPS[state.tutorial.step];
+  const el = tutTargetEl(s);
+  if (!el) { pop.hidden = true; return; }
+  el.classList.add("tutor-target");
+  $("#tutor-text").innerHTML = s.text;
+  $("#tutor-count").textContent = `${state.tutorial.step + 1} of ${TUT_STEPS.length}`;
+  pop.hidden = false;
+  positionTutorPop();
+  el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+}
+
+// fixed-position callout beside its target, clamped to the viewport; the
+// little arrow keeps pointing at the target even when the card is clamped
+function positionTutorPop() {
+  const pop = $("#tutor-pop");
+  const el = document.querySelector(".tutor-target");
+  if (pop.hidden || !el) return;
+  const r = el.getBoundingClientRect();
+  const pw = pop.offsetWidth, ph = pop.offsetHeight, gap = 10;
+  const above = r.top > innerHeight - r.bottom; // roomier side wins
+  let top = above ? r.top - ph - gap : r.bottom + gap;
+  const left = Math.max(8, Math.min(r.left + r.width / 2 - pw / 2, innerWidth - pw - 8));
+  top = Math.max(8, Math.min(top, innerHeight - ph - 8));
+  pop.style.top = top + "px";
+  pop.style.left = left + "px";
+  pop.classList.toggle("arrow-down", above);
+  const ax = Math.max(16, Math.min(r.left + r.width / 2 - left, pw - 16));
+  pop.style.setProperty("--arrow-x", ax + "px");
+}
+addEventListener("resize", positionTutorPop);
+addEventListener("scroll", positionTutorPop, { passive: true });
+
+function tutStoreDone() {
+  const store = loadStore();
+  store.tutorialDone = true;
+  saveStore(store);
+}
+
+function tutSkip() {
+  state.tutorial = null;
+  tutStoreDone();
+  tutorialRefresh();
+  newGame({ daily: true });
+}
+
+function tutComplete() {
+  state.tutorial = null;
+  tutStoreDone();
+  tutorialRefresh();
+  gardenConfirm({
+    text: `🌟 ${totalScore()} points — your first garden is in! Sun, water, friends, the barrel, the axe: that's the whole game. Out there it's one shared plot a day — the same garden for everyone.`,
+    yes: "Play today's plot",
+    no: "Admire this one first",
+    dismiss: false,
+  }).then(go => { if (go) newGame({ daily: true }); });
+}
+
+function startTutorialBoard() {
+  state.gameId = (state.gameId || 0) + 1; // cancel any pending gold refinement
+  state.isDailyBoard = false;
+  state.rng = mulberry32(hashStr("plotday:tutorial"));
+  state.dayNum = 0; // practice rules: no lock, no streak
+  state.seedLabel = "Tutorial garden";
+  state.season = "summer";
+  state.sunArc = "mid";
+  state.grid = TUT_OBSTACLES.map(row =>
+    row.map(o => ({ obstacle: o, plant: null, barrel: false })));
+  state.baseObstacles = TUT_OBSTACLES.map(row => row.slice());
+  const def = id => CATALOG.summer.find(d => d.id === id);
+  state.packet = [ // lesson order; water budget spends to exactly zero
+    { def: def("tomato"), qty: 2 },
+    { def: def("basil"), qty: 1 },
+    { def: def("mushroom"), qty: 1 },
+    { def: def("lettuce"), qty: 1 },
+  ];
+  state.waterMax = 6;
+  state.waterLeft = 6;
+  state.barrelStock = 1;
+  state.pruneStock = 1;
+  state.par = 0; state.gold = 1; state.goldLayout = null; // never shown: the tutorial ends on its own card
+  state.selected = null;
+  state.resolved = false;
+  recomputeSun();
+  $("#bot-banner").hidden = true;
+  renderAll();
+}
+
+function startTutorial(welcome = false) {
+  startTutorialBoard();
+  const begin = () => { state.tutorial = { step: 0 }; tutorialRefresh(); };
+  if (!welcome) return begin(); // replays skip the pitch — they asked for it
+  gardenConfirm({
+    text: "Welcome to Plot Day! 🌱 One little garden to grow, every day. Want a quick tour of your first plot? It takes about two minutes.",
+    yes: "Show me around",
+    no: "Skip — let me dig",
+    dismiss: false,
+  }).then(go => (go ? begin() : tutSkip()));
+}
+
+$("#tutor-skip").addEventListener("click", tutSkip);
+$("#tutorial-link").addEventListener("click", async e => {
+  e.preventDefault();
+  if (state.tutorial) return;
+  const touched = !state.resolved && state.grid.flat().some(c => c.plant || c.barrel);
+  if (touched) {
+    const ok = await gardenConfirm({
+      text: "Put down the trowel and replay the tutorial? This board's progress is cleared (an unfinished daily stays unscored).",
+      yes: "Replay tutorial",
+    });
+    if (!ok) return;
+  }
+  startTutorial();
+});
 
 /* ---------- go ---------- */
 $("#version-line").textContent = `Plot Day v${VERSION}`;
-newGame({ daily: true });
+if (loadStore().tutorialDone) newGame({ daily: true });
+else startTutorial(true); // first visit: a guided tour on a scripted board
 
 // offline play + instant loads once installed (no-op on file:// dev)
 if ("serviceWorker" in navigator && location.protocol !== "file:")

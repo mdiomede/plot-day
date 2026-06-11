@@ -827,6 +827,83 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   .tools-panel .tool-btn { min-width: 0; }
 }
 
+/* ---------- guided tutorial ---------- */
+/* anchored callout: the confirm-card's little sibling, pointing at one
+   tile, seed card, or tool; positioned from JS (positionTutorPop) */
+.tutor-pop {
+  position: fixed;
+  z-index: 30;
+  width: min(242px, calc(100vw - 16px));
+  background: var(--card);
+  border: 2px solid var(--paper-deep);
+  border-radius: 14px;
+  padding: 10px 12px 6px;
+  box-shadow: 0 12px 30px rgba(74, 59, 42, .32);
+}
+.tutor-pop[hidden] { display: none; }
+.tutor-pop p {
+  margin: 0;
+  font-size: .86rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: var(--ink);
+}
+.tutor-pop .em { width: .95em; height: .95em; }
+.tutor-pop::after { /* arrow toward the target; --arrow-x set from JS */
+  content: "";
+  position: absolute;
+  left: var(--arrow-x, 50%);
+  top: -7px;
+  width: 12px; height: 12px;
+  background: var(--card);
+  border-left: 2px solid var(--paper-deep);
+  border-top: 2px solid var(--paper-deep);
+  transform: translateX(-50%) rotate(45deg);
+}
+.tutor-pop.arrow-down::after { /* card sits above its target */
+  top: auto; bottom: -7px;
+  border-left: none; border-top: none;
+  border-right: 2px solid var(--paper-deep);
+  border-bottom: 2px solid var(--paper-deep);
+}
+.tutor-foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+}
+.tutor-count {
+  font-size: .62rem;
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: var(--ink-soft);
+}
+#tutor-skip {
+  background: none;
+  border: none;
+  padding: 2px 0;
+  font: inherit;
+  font-size: .68rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+  text-decoration: underline;
+  cursor: pointer;
+}
+#tutor-skip:hover { color: var(--terracotta-deep); }
+.tutor-pop.nudge { animation: tutorNudge .3s; }
+@keyframes tutorNudge {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-6px); }
+  75% { transform: translateX(6px); }
+}
+/* the one element the current step wants tapped (no z-index: lifting a
+   tile above the scene layer would hide fences and trees drawn over it) */
+.tutor-target { animation: tutorPulse 1.3s ease-in-out infinite; }
+@keyframes tutorPulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--terracotta); }
+  50% { box-shadow: 0 0 0 3px var(--terracotta), 0 0 16px 5px rgba(217, 113, 78, .55); }
+}
+
 /* ---------- results ---------- */
 .results-scrim[hidden] { display: none; }
 .results-scrim {
