@@ -9,7 +9,8 @@
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
-const DEV_MODE = true;
+// OFF as of June 2026: the user wants the truest daily experience.
+const DEV_MODE = false;
 
 // Watercolor sprites on the play board: tried June 2026, reverted — the
 // painterly vignettes clash with flat tiles (mixed-media). The watercolor
