@@ -646,7 +646,8 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   border: 2px solid var(--paper-deep);
   border-radius: 999px;
   padding: 4px 13px 4px 9px;
-  font-size: .8rem;
+  /* fluid on phones so the longest chip (Hanging on) keeps to one line */
+  font-size: clamp(.6rem, 2.8vw, .8rem);
   line-height: 1.2;
 }
 .status-chip strong { color: var(--ink); font-weight: 800; }
@@ -695,13 +696,6 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 @media (max-width: 1100px) {
   .guide { grid-template-columns: 1fr; max-width: 480px; }
 }
-
-/* ultra-narrow phones: the dock can't fit seven labeled buttons,
-   so fall back to icon-only tools */
-@media (max-width: 374px) {
-  .tools-panel .dock-label { display: none; }
-}
-
 /* dev / practice */
 .dev-panel h2 { color: var(--ink-soft); }
 .version {
@@ -805,7 +799,8 @@ h1, h2, .big-score, .finish-btn, .season-badge {
      min-width 0 lets the row compress instead of pushing Finish offscreen */
   .tools-panel .tool-btn {
     display: flex; flex-direction: column; align-items: center; justify-content: center;
-    gap: 1px; padding: 4px 4px 3px; min-width: 0;
+    gap: 1px; padding: 4px 4px 3px;
+    min-width: 44px; /* short labels (DIG) match their siblings */
     flex: 0 0 auto; /* tools hug their content; Finish takes the rest */
   }
   .finish-btn { min-width: 0; }
@@ -816,6 +811,14 @@ h1, h2, .big-score, .finish-btn, .season-badge {
     color: var(--ink-soft);
   }
   .finish-btn { flex: 1; width: auto; padding: 8px 6px; font-size: 1rem; }
+}
+
+/* ultra-narrow phones: the dock can't fit seven labeled buttons, so fall
+   back to icon-only tools (must follow the dock rules above to win the
+   cascade), and the status chips step down once more */
+@media (max-width: 374px) {
+  .tools-panel .dock-label { display: none; }
+  .tools-panel .tool-btn { min-width: 0; }
 }
 
 /* ---------- results ---------- */
