@@ -7,6 +7,8 @@
 
 /* ---------- constants ---------- */
 
+const VERSION = "0.2.1"; // bump on each deploy so phones can verify updates
+
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
 // OFF as of June 2026: the user wants the truest daily experience.
@@ -1550,7 +1552,7 @@ document.querySelectorAll(".phase-btn").forEach(btn => {
 /* ---------- finish & share ---------- */
 
 $("#finish-btn").addEventListener("click", () => {
-  if (state.resolved) { $("#results-scrim").hidden = false; return; }
+  if (state.resolved) { showResults(); return; } // restored locked days repopulate too
   state.resolved = true;
   state.selected = null;
   if (!DEV_MODE && state.dayNum > 0 && !todayEntry()) lockDaily(); // one scored attempt per day
@@ -1840,4 +1842,5 @@ $("#random-btn").addEventListener("click", () => newGame({ daily: false }));
 $("#today-btn").addEventListener("click", () => newGame({ daily: true }));
 
 /* ---------- go ---------- */
+$("#version-line").textContent = `Plot Day v${VERSION}`;
 newGame({ daily: true });
