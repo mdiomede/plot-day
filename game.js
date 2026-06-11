@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.2.3"; // bump on each deploy so phones can verify updates
+const VERSION = "0.2.4"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -568,12 +568,19 @@ function companionBonus(x, y) {
   return net;
 }
 
+// Sun a tile will have once every placed tall crop is watered: today's
+// shade plus the ghost shade. Previews must plan against THIS, not the
+// current sun, or shade crops under a future canopy tally wrong.
+function projectedSun(x, y) {
+  return 3 - state.shadePhases[y][x].size - state.ghostPhases[y][x].size;
+}
+
 // What the adjacency bonus WOULD be if this plant and its neighbors were
-// watered (sun-viability at current sun still required). Powers ghost chips.
+// watered (viability judged at projected sun). Powers ghost chips.
 function potentialBonus(x, y) {
   const p = state.grid[y][x].plant;
   if (!p) return 0;
-  const viable = (px, py, d) => Math.abs(state.sun[py][px] - d.sun) < 2;
+  const viable = (px, py, d) => Math.abs(projectedSun(px, py) - d.sun) < 2;
   if (!viable(x, y, p.def)) return 0;
   let net = 0;
   for (const [dx, dy] of DIRS) {
@@ -608,13 +615,13 @@ function plantPoints(x, y) {
   return Math.max(0, base + companionBonus(x, y)); // enemies can zero a plant, never go negative
 }
 
-// What this plant WOULD earn once watered (current sun, neighbors assumed
+// What this plant WOULD earn once watered (projected sun, neighbors assumed
 // watered too) — powers the on-tile points preview for planning.
 function pointsPreview(x, y) {
   const p = state.grid[y][x].plant;
   if (!p) return 0;
   if (p.watered) return plantPoints(x, y);
-  const gap = Math.abs(state.sun[y][x] - p.def.sun);
+  const gap = Math.abs(projectedSun(x, y) - p.def.sun);
   if (gap >= 2) return 0;
   const base = gap === 0 ? p.def.pts : Math.ceil(p.def.pts / 2);
   return Math.max(0, base + potentialBonus(x, y));
@@ -1421,15 +1428,17 @@ function renderTools() {
   const barrel = $("#tool-barrel");
   barrel.classList.toggle("is-selected", state.selected?.type === "barrel");
   barrel.disabled = state.barrelStock === 0 || state.resolved;
-  barrel.innerHTML = state.barrelStock > 0
-    ? `${em("1f6e2")}<span class="long-label"> Rain barrel:</span> ${em("1f4a7")}−1<span class="long-label"> for neighbors</span>`
-    : `${em("1f6e2")}<span class="long-label"> Rain barrel</span> ✓`;
+  barrel.innerHTML = (state.barrelStock > 0
+    ? `<span class="tool-face">${em("1f6e2")}<span class="long-label"> Rain barrel:</span> ${em("1f4a7")}−1<span class="long-label"> for neighbors</span></span>`
+    : `<span class="tool-face">${em("1f6e2")}<span class="long-label"> Rain barrel</span> ✓</span>`)
+    + `<small class="dock-label">barrel</small>`;
   const prune = $("#tool-prune");
   prune.classList.toggle("is-selected", state.selected?.type === "prune");
   prune.disabled = state.pruneStock === 0 || state.resolved;
-  prune.innerHTML = state.pruneStock > 0
-    ? `${em("1fa93")}<span class="long-label"> Prune</span>`
-    : `${em("1fa93")}<span class="long-label"> Pruned</span> ✓`;
+  prune.innerHTML = (state.pruneStock > 0
+    ? `<span class="tool-face">${em("1fa93")}<span class="long-label"> Prune</span></span>`
+    : `<span class="tool-face">${em("1fa93")}<span class="long-label"> Pruned</span> ✓</span>`)
+    + `<small class="dock-label">prune</small>`;
 }
 
 /* ---------- interactions ---------- */
@@ -1557,6 +1566,7 @@ document.querySelectorAll(".phase-btn").forEach(btn => {
 /* ---------- finish & share ---------- */
 
 $("#finish-btn").addEventListener("click", () => {
+  if (playerSnap) { exitBotView(); return; } // never score the bot's garden as yours
   if (state.resolved) { showResults(); return; } // restored locked days repopulate too
   state.resolved = true;
   state.selected = null;

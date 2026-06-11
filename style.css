@@ -607,6 +607,7 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 }
 .tool-btn:hover { transform: translateY(-2px); }
 .tool-btn.is-selected { border-color: var(--terracotta); background: #fff3ea; }
+.dock-label { display: none; } /* mobile dock only: tiny label under the tool icon */
 
 .finish-btn {
   width: 100%;
@@ -792,6 +793,17 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   .tool-row { display: contents; }
   .tool-btn { padding: 7px 11px; font-size: 1rem; }
   .barrel-btn { width: auto; margin: 0; font-size: 1rem; }
+  /* icon-over-label dock buttons, echoing the sun-phase buttons */
+  .tools-panel .tool-btn {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    gap: 1px; padding: 4px 9px 3px;
+  }
+  .tools-panel .dock-label {
+    display: block;
+    font-size: .56rem; font-weight: 800;
+    letter-spacing: .04em; text-transform: uppercase;
+    color: var(--ink-soft);
+  }
   .finish-btn { flex: 1; width: auto; padding: 8px 6px; font-size: 1rem; }
 }
 
