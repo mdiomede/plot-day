@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.2.2"; // bump on each deploy so phones can verify updates
+const VERSION = "0.2.3"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -37,7 +37,10 @@ const EMOJI_ART = {
 };
 
 const W = 7, H = 5;
-const EPOCH = Date.UTC(2026, 5, 1); // day numbering starts 2026-06-01
+// Plot #1 = May 31, 2026 in LOCAL time. Both the board seed and the plot
+// number roll over together at the player's local midnight (Wordle-style).
+// (Epoch chosen so historical locked entries keep their numbers.)
+const EPOCH_Y = 2026, EPOCH_M = 4, EPOCH_D = 31;
 
 const PHASES = ["am", "noon", "pm"];
 
@@ -218,7 +221,9 @@ function newGame({ daily = true, season = null, replay = false } = {}) {
   if (daily) {
     const key = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
     state.rng = mulberry32(hashStr("plotday:" + key));
-    state.dayNum = Math.max(1, Math.floor((Date.now() - EPOCH) / 86400000) + 1);
+    const localMidnight = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const epoch = new Date(EPOCH_Y, EPOCH_M, EPOCH_D);
+    state.dayNum = Math.max(1, Math.round((localMidnight - epoch) / 86400000) + 1);
     state.seedLabel = `Plot #${state.dayNum}`;
     state.season = seasonForDate(today);
   } else {
