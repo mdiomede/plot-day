@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.4.0"; // bump on each deploy so phones can verify updates
+const VERSION = "0.4.1"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -219,6 +219,7 @@ function seasonForDate(d) {
 function newGame({ daily = true, season = null, replay = false } = {}) {
   const today = new Date();
   state.isDailyBoard = daily; // daily boards (incl. replays) share spoiler-safe
+  state.isTutorialBoard = false;
   if (daily) {
     const key = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
     state.rng = mulberry32(hashStr("plotday:" + key));
@@ -1618,6 +1619,7 @@ $("#finish-btn").addEventListener("click", () => {
     tutAdvance();
     return;
   }
+  if (state.isTutorialBoard) return tutEndCard(); // admiring: Finish re-offers the exits
   if (state.resolved) { showResults(); return; } // restored locked days repopulate too
   state.resolved = true;
   state.selected = null;
@@ -1959,9 +1961,9 @@ const TUT_STEPS = [
   { type: "seed", id: "basil",
     text: `Thriving! 🌟 Now — crops have <b>friends</b>. Basil keeps the bugs off tomatoes. Tap the <b>basil</b>.` },
   { type: "tile", x: 4, y: 2,
-    text: `Basil wants <b>2 sun</b>, and the tree shades this spot every afternoon — exactly 2 pips. And its tomato friend is right next door.` },
+    text: `Basil wants <b>2 sun</b>, and the tree shades this spot every afternoon — exactly 2 pips. (Peek with the <b>afternoon</b> button up top!) And its tomato friend is right next door.` },
   { type: "tool", id: "water",
-    text: `You know the rhythm — can first.` },
+    text: `You know the rhythm — watering can first.` },
   { type: "tile", x: 4, y: 2,
     text: `Water the basil (${em("1f4a7")}1) and watch the <b>♥</b> appear: friends side by side earn <b>+2 each</b>.` },
   { type: "seed", id: "mushroom",
@@ -1981,19 +1983,19 @@ const TUT_STEPS = [
   { type: "tile", x: 4, y: 4,
     text: `One pip of sun — just enough. And it's right beside the barrel…` },
   { type: "tool", id: "water",
-    text: `Once more with the can.` },
+    text: `The watering can again — lettuce is thirsty too.` },
   { type: "tile", x: 4, y: 4,
     text: `Water it — <b>free!</b> The barrel covers the cost.` },
   { type: "tool", id: "prune",
     text: `One last tool: the axe <b>fells a single tree or fence</b> each day to open up sun. (Spare the trees — mushrooms would miss them.) Tap <b>prune</b>.` },
   { type: "tile", x: 5, y: 3,
-    text: `This fence shades the corner behind it all afternoon. Chop it down.` },
+    text: `This fence shades the plot beside it all afternoon. Chop it down.` },
   { type: "seed", id: "tomato",
-    text: `Look at that corner now — <b>full sun</b>. And you have one tomato left…` },
+    text: `Look at that freed-up plot — <b>full sun</b> now. And you have one tomato left…` },
   { type: "tile", x: 6, y: 3,
     text: `Plant it in the sunshine you just made.` },
   { type: "tool", id: "water",
-    text: `Last job for the can.` },
+    text: `One last job for the watering can.` },
   { type: "tile", x: 6, y: 3,
     text: `Your final 2 ${em("1f4a7")} — a garden with nothing wasted.` },
   { type: "finish",
@@ -2084,10 +2086,16 @@ function tutComplete() {
   state.tutorial = null;
   tutStoreDone();
   tutorialRefresh();
+  tutEndCard();
+}
+
+// Also re-shown when Finish is tapped on the admired tutorial garden —
+// the results screen would be a dead end (and its Par/Gold are fake here).
+function tutEndCard() {
   gardenConfirm({
     text: `🌟 ${totalScore()} points — your first garden is in! Sun, water, friends, the barrel, the axe: that's the whole game. Out there it's one shared plot a day — the same garden for everyone.`,
-    yes: "Play today's plot",
-    no: "Admire this one first",
+    yes: "Play\ntoday's plot",
+    no: "Admire\nthis one first",
     dismiss: false,
   }).then(go => { if (go) newGame({ daily: true }); });
 }
@@ -2095,6 +2103,7 @@ function tutComplete() {
 function startTutorialBoard() {
   state.gameId = (state.gameId || 0) + 1; // cancel any pending gold refinement
   state.isDailyBoard = false;
+  state.isTutorialBoard = true; // routes Finish back to the tutorial end card
   state.rng = mulberry32(hashStr("plotday:tutorial"));
   state.dayNum = 0; // practice rules: no lock, no streak
   state.seedLabel = "Tutorial garden";
@@ -2128,8 +2137,8 @@ function startTutorial(welcome = false) {
   if (!welcome) return begin(); // replays skip the pitch — they asked for it
   gardenConfirm({
     text: "Welcome to Plot Day! 🌱 One little garden to grow, every day. Want a quick tour of your first plot? It takes about two minutes.",
-    yes: "Show me around",
-    no: "Skip — let me dig",
+    yes: "Show me\naround",
+    no: "Skip —\nlet me dig",
     dismiss: false,
   }).then(go => (go ? begin() : tutSkip()));
 }

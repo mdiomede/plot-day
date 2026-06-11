@@ -935,7 +935,11 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 }
 .confirm-actions { display: flex; gap: 8px; }
 .confirm-actions .tool-btn,
-.confirm-actions .finish-btn { flex: 1; width: auto; font-size: 1rem; padding: 9px 8px; }
+.confirm-actions .finish-btn {
+  flex: 1; width: auto; font-size: 1rem; padding: 9px 8px;
+  white-space: pre-line; /* labels carry their own line breaks so paired buttons match */
+  line-height: 1.25;
+}
 /* day's end: the card sinks into dusk */
 .results-card {
   background:
