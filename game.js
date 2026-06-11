@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.4.1"; // bump on each deploy so phones can verify updates
+const VERSION = "0.4.2"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1430,7 +1430,14 @@ function renderPacket() {
 }
 
 function renderWater() {
-  $("#water-count").textContent = `${state.waterLeft}/${state.waterMax}`;
+  const countEl = $("#water-count");
+  const label = `${state.waterLeft}/${state.waterMax}`;
+  if (countEl.textContent && countEl.textContent !== label) {
+    countEl.classList.remove("bump"); // restart the animation on rapid spends
+    void countEl.offsetWidth;
+    countEl.classList.add("bump");
+  }
+  countEl.textContent = label;
   const wrap = $("#water-pips");
   wrap.innerHTML = "";
   for (let i = 0; i < state.waterMax; i++)
@@ -1949,6 +1956,8 @@ const TUT_OBSTACLES = [ // [y][x]
 // type "seed"/"tool": tap that card or button (selection is forced, no
 // deselect). type "tile": tap tile (x,y) — the action comes from whatever
 // the previous step put in hand. type "finish": the Finish button.
+// type "look": nothing to do — spotlight an element (sel) and wait for
+// the callout's own "Got it" button; everything else stays gated.
 const TUT_STEPS = [
   { type: "seed", id: "tomato",
     text: `Every seed card shows the sun it needs. Tomatoes crave <b>full sun</b> — ${em("2600")}●●●. Tap the <b>tomato</b> to pick it up.` },
@@ -1958,6 +1967,8 @@ const TUT_STEPS = [
     text: `<b>Water is life</b> — an unwatered plant wilts by sundown. Tap the <b>watering can</b>.` },
   { type: "tile", x: 4, y: 1,
     text: `Give the tomato a drink. Its card says ${em("1f4a7")}2, so it drinks 2 of your 6 water.` },
+  { type: "look", sel: ".water-meter",
+    text: `That drink came from your day's supply — see it? <b>4 of 6</b> left. There's never enough for everything, so spend it wisely.` },
   { type: "seed", id: "basil",
     text: `Thriving! 🌟 Now — crops have <b>friends</b>. Basil keeps the bugs off tomatoes. Tap the <b>basil</b>.` },
   { type: "tile", x: 4, y: 2,
@@ -1979,13 +1990,15 @@ const TUT_STEPS = [
   { type: "tile", x: 3, y: 4,
     text: `Set it down here — we'll plant its neighbor next.` },
   { type: "seed", id: "lettuce",
-    text: `Lettuce is easygoing: 1 sun, ${em("1f4a7")}1. Tap the <b>lettuce</b>.` },
+    text: `See the <b>−1</b> tags around the barrel? Anything planted there waters cheaper. Lettuce is easygoing — 1 sun, ${em("1f4a7")}1. Tap the <b>lettuce</b>.` },
   { type: "tile", x: 4, y: 4,
     text: `One pip of sun — just enough. And it's right beside the barrel…` },
   { type: "tool", id: "water",
     text: `The watering can again — lettuce is thirsty too.` },
   { type: "tile", x: 4, y: 4,
-    text: `Water it — <b>free!</b> The barrel covers the cost.` },
+    text: `Now water it.` },
+  { type: "look", sel: ".water-meter",
+    text: `<b>Free!</b> Your supply didn't budge — still 2 of 6. That's the barrel: neighbors pay 1 less ${em("1f4a7")}.` },
   { type: "tool", id: "prune",
     text: `One last tool: the axe <b>fells a single tree or fence</b> each day to open up sun. (Spare the trees — mushrooms would miss them.) Tap <b>prune</b>.` },
   { type: "tile", x: 5, y: 3,
@@ -2014,6 +2027,7 @@ function tutTargetEl(s) {
   if (s.type === "seed") return document.querySelector(`#packet .seed-card[data-crop="${s.id}"]`);
   if (s.type === "tool") return $("#tool-" + s.id);
   if (s.type === "tile") return boardEl.querySelector(`.tile[data-x="${s.x}"][data-y="${s.y}"]`);
+  if (s.type === "look") return document.querySelector(s.sel);
   return $("#finish-btn");
 }
 
@@ -2043,6 +2057,7 @@ function tutorialRefresh() {
   el.classList.add("tutor-target");
   $("#tutor-text").innerHTML = s.text;
   $("#tutor-count").textContent = `${state.tutorial.step + 1} of ${TUT_STEPS.length}`;
+  $("#tutor-next").hidden = s.type !== "look"; // look steps advance from the card itself
   pop.hidden = false;
   positionTutorPop();
   el.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
@@ -2144,6 +2159,7 @@ function startTutorial(welcome = false) {
 }
 
 $("#tutor-skip").addEventListener("click", tutSkip);
+$("#tutor-next").addEventListener("click", () => tutAdvance());
 $("#tutorial-link").addEventListener("click", async e => {
   e.preventDefault();
   if (state.tutorial) return;

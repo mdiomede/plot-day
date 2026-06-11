@@ -890,6 +890,23 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   cursor: pointer;
 }
 #tutor-skip:hover { color: var(--terracotta-deep); }
+#tutor-next { /* "Got it" on look-only steps: a small finish-btn cousin */
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+  font-family: "Baloo 2", cursive;
+  font-weight: 700;
+  font-size: .9rem;
+  color: #fff;
+  background: var(--terracotta);
+  border: none;
+  border-radius: 10px;
+  padding: 7px 10px;
+  cursor: pointer;
+  box-shadow: 0 2px 0 var(--terracotta-deep);
+}
+#tutor-next:hover { background: var(--terracotta-deep); }
+#tutor-next[hidden] { display: none; }
 .tutor-pop.nudge { animation: tutorNudge .3s; }
 @keyframes tutorNudge {
   0%, 100% { transform: translateX(0); }
@@ -902,6 +919,18 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 @keyframes tutorPulse {
   0%, 100% { box-shadow: 0 0 0 3px var(--terracotta); }
   50% { box-shadow: 0 0 0 3px var(--terracotta), 0 0 16px 5px rgba(217, 113, 78, .55); }
+}
+
+/* the water count bumps whenever it changes, so the budget discovers
+   itself even for players who skipped the tutorial */
+.water-count.bump {
+  display: inline-block; /* spans can't transform */
+  animation: waterBump .5s ease;
+}
+@keyframes waterBump {
+  0% { transform: scale(1); }
+  35% { transform: scale(1.5); color: #2fa3b5; }
+  100% { transform: scale(1); }
 }
 
 /* ---------- results ---------- */
