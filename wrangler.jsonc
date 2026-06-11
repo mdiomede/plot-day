@@ -1,0 +1,9 @@
+{
+  // Static-site config for Cloudflare's Workers/Pages git deploys.
+  // No build step: the repo root IS the site.
+  "name": "plot-day",
+  "compatibility_date": "2026-06-10",
+  "assets": {
+    "directory": "."
+  }
+}
