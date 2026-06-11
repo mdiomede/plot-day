@@ -97,8 +97,25 @@
       </div>
     </div>
 
-    <p class="version" id="version-line"></p>
+    <footer class="footer">
+      <p class="version" id="version-line"></p>
+      <p class="footnotes">
+        <a href="mailto:diomed3@gmail.com?subject=Plot%20Day%20feedback">Send feedback</a>
+        · emoji art from <a href="https://github.com/twitter/twemoji" target="_blank" rel="noopener">Twemoji</a> (CC-BY 4.0)
+      </p>
+    </footer>
 </main>
+
+<!-- ============ THEMED CONFIRM (replaces browser confirm) ============ -->
+<div class="results-scrim" id="confirm-scrim" hidden>
+  <div class="confirm-card">
+    <p id="confirm-text"></p>
+    <div class="confirm-actions">
+      <button id="confirm-no" class="tool-btn">Never mind</button>
+      <button id="confirm-yes" class="finish-btn">Do it</button>
+    </div>
+  </div>
+</div>
 
 <!-- ============ RESULTS ============ -->
 <div class="results-scrim" id="results-scrim" hidden>

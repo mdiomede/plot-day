@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.2.7"; // bump on each deploy so phones can verify updates
+const VERSION = "0.3.0"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1519,15 +1519,34 @@ function onTileClick(x, y) {
   }
 }
 
+// Themed stand-in for window.confirm — same card the tutorial will use.
+function gardenConfirm({ text, yes = "Do it", no = "Never mind" }) {
+  return new Promise(resolve => {
+    $("#confirm-text").textContent = text;
+    $("#confirm-yes").textContent = yes;
+    $("#confirm-no").textContent = no;
+    const scrim = $("#confirm-scrim");
+    const finish = val => { scrim.hidden = true; resolve(val); };
+    $("#confirm-yes").onclick = () => finish(true);
+    $("#confirm-no").onclick = () => finish(false);
+    scrim.onclick = e => { if (e.target === scrim) finish(false); };
+    scrim.hidden = false;
+  });
+}
+
 $("#tool-barrel").addEventListener("click", () => {
   state.selected = state.selected?.type === "barrel" ? null : { type: "barrel" };
   renderPacket(); renderTools();
 });
-$("#tool-reset").addEventListener("click", () => {
+$("#tool-reset").addEventListener("click", async () => {
   if (state.resolved) return;
   const touched = state.grid.flat().some(c => c.plant || c.barrel) || state.pruneStock === 0;
   if (!touched) return;
-  if (!confirm("Dig up the whole garden and start this board over?")) return;
+  const ok = await gardenConfirm({
+    text: "Dig up the whole garden and start this board over?",
+    yes: "Clear it",
+  });
+  if (!ok) return;
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const cell = state.grid[y][x];
@@ -1659,8 +1678,12 @@ function buildShareText(score) {
   // shareGridCells. Practice plots are random, so they share full detail.
   const grid = shareGridCells().map(r => r.join("")).join("\n");
   const skill = score > state.gold ? "BEAT GOLD 🏆" : `Skill ${Math.round((100 * score) / state.gold)}`;
-  const streak = state.dayNum > 0 ? ` · 🔥${currentStreak()}` : "";
-  return `${state.seedLabel} · ${meta.label}${streak}\n🏆 ${score} pts · ${skill}\nGold ${state.gold} · Par ${state.par}\n${grid}\n`;
+  // dated like Wordle; the streak stays on your own results screen — shares
+  // shouldn't make streakless friends feel behind
+  const date = state.dayNum > 0
+    ? ` · ${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+    : "";
+  return `${state.seedLabel} · ${meta.label}${date}\n🏆 ${score} pts · ${skill}\nGold ${state.gold} · Par ${state.par}\n${grid}\n`;
 }
 
 $("#copy-btn").addEventListener("click", async () => {
@@ -1867,3 +1890,7 @@ $("#today-btn").addEventListener("click", () => newGame({ daily: true }));
 /* ---------- go ---------- */
 $("#version-line").textContent = `Plot Day v${VERSION}`;
 newGame({ daily: true });
+
+// offline play + instant loads once installed (no-op on file:// dev)
+if ("serviceWorker" in navigator && location.protocol !== "file:")
+  navigator.serviceWorker.register("sw.js").catch(() => { /* offline still optional */ });

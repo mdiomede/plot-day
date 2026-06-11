@@ -698,14 +698,20 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 }
 /* dev / practice */
 .dev-panel h2 { color: var(--ink-soft); }
+.footer { grid-column: 1; text-align: center; }
 .version {
-  grid-column: 1;
-  text-align: center;
   font-size: .72rem;
   font-weight: 700;
   color: rgba(122, 106, 82, .55);
   margin: 4px 0 0;
 }
+.footnotes {
+  font-size: .72rem;
+  font-weight: 600;
+  color: rgba(122, 106, 82, .55);
+  margin: 2px 0 0;
+}
+.footnotes a { color: inherit; }
 .dev-row { display: flex; gap: 6px; flex-wrap: wrap; }
 .dev-btn {
   font-family: "Nunito", sans-serif;
@@ -831,6 +837,28 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   padding: 20px;
   z-index: 10;
 }
+
+/* themed confirm: a little garden-paper card, also the home of future
+   tutorial pop-ups */
+.confirm-card {
+  background: var(--card);
+  border: 2px solid var(--paper-deep);
+  border-radius: 18px;
+  padding: 20px 18px 14px;
+  max-width: 330px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 14px 36px rgba(74, 59, 42, .35);
+}
+.confirm-card p {
+  margin: 0 0 16px;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.45;
+}
+.confirm-actions { display: flex; gap: 8px; }
+.confirm-actions .tool-btn,
+.confirm-actions .finish-btn { flex: 1; width: auto; font-size: 1rem; padding: 9px 8px; }
 /* day's end: the card sinks into dusk */
 .results-card {
   background:
