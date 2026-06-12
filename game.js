@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.3"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.4"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1936,7 +1936,7 @@ document.querySelectorAll(".phase-btn").forEach(btn => {
 
 /* ---------- finish & share ---------- */
 
-$("#finish-btn").addEventListener("click", () => {
+$("#finish-btn").addEventListener("click", async () => {
   if (playerSnap) { exitBotView(); return; } // never score the bot's garden as yours
   if (state.tutorial) { // the tutorial ends on its own card, not the results screen
     if (!tutExpect("finish")) return tutNudge();
@@ -1949,12 +1949,31 @@ $("#finish-btn").addEventListener("click", () => {
   }
   if (state.isTutorialBoard) return tutEndCard(); // admiring: Finish re-offers the exits
   if (state.resolved) { showResults(); return; } // restored locked days repopulate too
+  // The daily locks forever on one tap — that tap deserves a confirm.
+  // (Practice skips it: an accidental finish there is undone by Keep tending.)
+  if (!DEV_MODE && state.dayNum > 0 && !todayEntry()) {
+    const ok = await gardenConfirm({
+      text: `End the day? Plot #${state.dayNum} locks in as your one scored attempt.`,
+      yes: "Finish\nthe day",
+      no: "Keep\ngardening",
+    });
+    if (!ok) return;
+  }
   state.resolved = true;
   state.selected = null;
   sfx("finish");
   if (!DEV_MODE && state.dayNum > 0 && !todayEntry()) lockDaily(); // one scored attempt per day
   renderAll();
   showResults();
+});
+
+// Practice finishes are reversible: nothing locked, so nothing lost. The
+// board thaws exactly as it stood (an accidental Finish must cost zero).
+$("#tend-btn").addEventListener("click", () => {
+  state.resolved = false;
+  state.selected = null;
+  $("#results-scrim").hidden = true;
+  renderAll();
 });
 
 /* ---------- ribbons: horticulture-show awards by skill ----------
@@ -2014,6 +2033,7 @@ function showResults() {
     `<div>${em("1f31f")} ${thrive} thriving · ${em("1f605")} ${ok} hanging on · ${em("1f480")} ${dead} lost</div>` +
     (tallyRow2.length ? `<div>${tallyRow2.join(" · ")}</div>` : "");
   $("#replay-btn").hidden = state.dayNum === 0; // replays/practice can't re-replay
+  $("#tend-btn").hidden = state.dayNum !== 0;   // practice only: dailies are locked
   // practice & replay results offer the way home — finishing a replay was
   // a dead end (the only exit was knowing the Today button existed)
   $("#today-return-btn").hidden = state.dayNum !== 0;
