@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.10"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.11"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -226,6 +226,9 @@ function seasonForDate(d) {
 
 function newGame({ daily = true, season = null, replay = false } = {}) {
   const today = new Date();
+  playerSnap = null; // any bot-view snapshot belongs to a dead board now —
+  // without this, jumping to a new plot FROM the bot's garden left Finish
+  // resurrecting the old board's garden and results (found by playtest)
   state.isDailyBoard = daily; // daily boards (incl. replays) share spoiler-safe
   state.isTutorialBoard = false;
   if (daily) {
@@ -2649,6 +2652,7 @@ function tutEndCard() {
 }
 
 function startTutorialBoard() {
+  playerSnap = null; // same guard as newGame: stale bot-view snapshots die here
   state.gameId = (state.gameId || 0) + 1; // cancel any pending gold refinement
   state.isDailyBoard = false;
   state.isTutorialBoard = true; // routes Finish back to the tutorial end card
