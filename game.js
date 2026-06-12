@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.5.1"; // bump on each deploy so phones can verify updates
+const VERSION = "0.6.0"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1485,6 +1485,7 @@ function onTileClick(x, y) {
     state.pruneStock--;
     state.selected = null;
     recomputeSun();
+    sfx("chop");
     renderAll();
     tutAdvance();
   } else if (sel.type === "barrel" && !cell.plant && !cell.barrel) {
@@ -1492,6 +1493,7 @@ function onTileClick(x, y) {
     cell.barrel = true;
     state.barrelStock--;
     state.selected = null;
+    sfx("barrel");
     renderAll();
     tutAdvance();
   } else if (sel.type === "seed" && !cell.plant && !cell.barrel) {
@@ -1501,6 +1503,7 @@ function onTileClick(x, y) {
     cell.plant = { def: slot.def, watered: false };
     if (slot.def.tall) recomputeSun();
     if (slot.qty === 0) state.selected = null;
+    sfx("plant");
     renderAll();
     tutAdvance();
   } else if (sel.type === "water" && cell.plant) {
@@ -1514,6 +1517,7 @@ function onTileClick(x, y) {
       cell.plant.watered = true;
       cell.plant.paid = cost;
       state.waterLeft -= cost;
+      sfx("water");
     }
     if (cell.plant.def.tall) recomputeSun(); // watering a tall raises its shadow
     renderBoard(); renderWater();
@@ -1534,6 +1538,7 @@ function onTileClick(x, y) {
     }
     cell.barrel = false;
     state.barrelStock++;
+    sfx("dig");
     renderAll();
   } else if (sel.type === "shovel" && cell.plant) {
     const slot = state.packet.find(s => s.def === cell.plant.def);
@@ -1542,9 +1547,95 @@ function onTileClick(x, y) {
     const wasTall = cell.plant.def.tall;
     cell.plant = null;
     if (wasTall) recomputeSun();
+    sfx("dig");
     renderAll();
   }
 }
+
+/* ---------- sound: tiny synthesized garden noises ----------
+   All Web Audio, no files: soft toy-like foley to match the storybook
+   art (the watercolor lesson applies to ears too — style over realism).
+   Every call site is a click handler, which satisfies autoplay rules.
+   If the water sprinkle disappoints real ears, swap in one recorded
+   sample for water only; keep the knocks and chimes synthesized. */
+
+let audioCtx = null;
+function ac() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === "suspended") audioCtx.resume();
+  return audioCtx;
+}
+
+function tone(ctx, { freq, type = "sine", t0, dur, vol, slideTo }) {
+  const o = ctx.createOscillator(), g = ctx.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t0);
+  if (slideTo) o.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+  g.gain.setValueAtTime(vol, t0);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  o.connect(g).connect(ctx.destination);
+  o.start(t0);
+  o.stop(t0 + dur + 0.02);
+}
+
+function noise(ctx, { t0, dur, vol, filterType = "lowpass", filterFreq = 2000, q = 0.8, sweepTo }) {
+  const len = Math.ceil(ctx.sampleRate * dur);
+  const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) data[i] = Math.random() * 2 - 1;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const f = ctx.createBiquadFilter();
+  f.type = filterType;
+  f.frequency.setValueAtTime(filterFreq, t0);
+  f.Q.value = q;
+  if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t0 + dur);
+  const g = ctx.createGain();
+  g.gain.setValueAtTime(vol, t0);
+  g.gain.exponentialRampToValueAtTime(0.001, t0 + dur);
+  src.connect(f).connect(g).connect(ctx.destination);
+  src.start(t0);
+}
+
+function sfx(name) {
+  if (state.muted) return;
+  let ctx;
+  try { ctx = ac(); } catch { return; } // no audio is never an error
+  const t = ctx.currentTime;
+  if (name === "plant") { // seed tucked into soil
+    noise(ctx, { t0: t, dur: 0.08, vol: 0.22, filterFreq: 900 });
+    tone(ctx, { freq: 130, t0: t, dur: 0.12, vol: 0.24, slideTo: 70 });
+  } else if (name === "water") { // watering-can sprinkle + a droplet
+    noise(ctx, { t0: t, dur: 0.25, vol: 0.13, filterType: "bandpass", filterFreq: 4200, q: 1.2, sweepTo: 2600 });
+    tone(ctx, { freq: 720, t0: t + 0.03, dur: 0.07, vol: 0.05, slideTo: 980 });
+  } else if (name === "dig") { // shovel scoop
+    noise(ctx, { t0: t, dur: 0.14, vol: 0.2, filterFreq: 1400, sweepTo: 500 });
+  } else if (name === "chop") { // axe bite
+    noise(ctx, { t0: t, dur: 0.05, vol: 0.26, filterType: "highpass", filterFreq: 900 });
+    tone(ctx, { freq: 180, type: "triangle", t0: t, dur: 0.09, vol: 0.26, slideTo: 90 });
+  } else if (name === "barrel") { // wooden knock-knock
+    tone(ctx, { freq: 160, type: "triangle", t0: t, dur: 0.07, vol: 0.28, slideTo: 120 });
+    tone(ctx, { freq: 140, type: "triangle", t0: t + 0.09, dur: 0.09, vol: 0.24, slideTo: 100 });
+  } else if (name === "finish") { // warm dusk chime
+    [[523.25, 0], [659.25, 0.12], [783.99, 0.24], [1046.5, 0.38]].forEach(([f, d]) =>
+      tone(ctx, { freq: f, t0: t + d, dur: 0.5, vol: 0.11 }));
+  }
+}
+
+function renderMute() {
+  const btn = $("#mute-btn");
+  btn.innerHTML = em(state.muted ? "1f507" : "1f50a");
+  btn.title = state.muted ? "Sound is off" : "Sound is on";
+}
+
+$("#mute-btn").addEventListener("click", () => {
+  state.muted = !state.muted;
+  const s = loadStore();
+  s.muted = state.muted;
+  saveStore(s);
+  renderMute();
+  if (!state.muted) sfx("water"); // a little sprinkle says "you're back on"
+});
 
 // Themed stand-in for window.confirm — the tutorial's bookend cards use it
 // too (with dismiss off, so a stray scrim tap can't skip the tour).
@@ -1603,6 +1694,7 @@ $("#tool-reset").addEventListener("click", async () => {
   state.waterLeft = state.waterMax;
   state.selected = null;
   recomputeSun();
+  sfx("dig");
   renderAll();
 });
 
@@ -1626,6 +1718,7 @@ $("#finish-btn").addEventListener("click", () => {
     if (!tutExpect("finish")) return tutNudge();
     state.resolved = true;
     state.selected = null;
+    sfx("finish");
     renderAll();
     tutAdvance();
     return;
@@ -1634,6 +1727,7 @@ $("#finish-btn").addEventListener("click", () => {
   if (state.resolved) { showResults(); return; } // restored locked days repopulate too
   state.resolved = true;
   state.selected = null;
+  sfx("finish");
   if (!DEV_MODE && state.dayNum > 0 && !todayEntry()) lockDaily(); // one scored attempt per day
   renderAll();
   showResults();
@@ -2229,6 +2323,8 @@ $("#tutorial-link").addEventListener("click", async e => {
 
 /* ---------- go ---------- */
 $("#version-line").textContent = `Plot Day v${VERSION}`;
+state.muted = !!loadStore().muted;
+renderMute();
 if (loadStore().tutorialDone) newGame({ daily: true });
 else startTutorial(true); // first visit: a guided tour on a scripted board
 

@@ -83,6 +83,21 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   font-size: .95rem;
 }
 .day-block { text-align: right; display: flex; flex-direction: column; gap: 4px; align-items: flex-end; }
+.day-row { display: flex; align-items: center; gap: 8px; }
+.mute-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--card);
+  border: 2px solid var(--paper-deep);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.mute-btn:hover { border-color: var(--terracotta); }
+.mute-btn .em { width: .95rem; height: .95rem; vertical-align: 0; }
 .season-badge {
   display: inline-block;
   background: var(--leaf);
