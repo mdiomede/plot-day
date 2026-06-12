@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.6.2"; // bump on each deploy so phones can verify updates
+const VERSION = "0.6.3"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1817,7 +1817,8 @@ function refreshGoldUI() {
   if (rb) ribbonLine.innerHTML = ribbonImg(rb) + `<span class="ribbon-name">${rb.name}</span>`;
   $("#bot-btn").disabled = !state.goldLayout;
   state.lastShare = buildShareText(score); // raw text for the clipboard
-  $("#share-head").textContent = state.lastShare.split("\n").slice(0, 3).join("\n");
+  const headLines = ribbonFor(score, state.gold) ? 3 : 2; // everything above the grid
+  $("#share-head").textContent = state.lastShare.split("\n").slice(0, headLines).join("\n");
   $("#share-grid").innerHTML = shareGridCells()
     .map(r => `<div class="sg-row">${r.map(c => `<span>${c}</span>`).join("")}</div>`)
     .join("");
@@ -1858,9 +1859,11 @@ function buildShareText(score) {
   const date = state.dayNum > 0
     ? ` · ${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
     : "";
+  // no Gold/Par line: skill already encodes the benchmark, and to friends
+  // it was just extra text (the results screen keeps the private ladder)
   const rb = ribbonFor(score, state.gold);
   const ribbonLine = rb ? `${rb.emoji} ${rb.name}\n` : "";
-  return `${state.seedLabel} · ${meta.label}${date}\n🏆 ${score} pts · ${skill}\n${ribbonLine}Gold ${state.gold} · Par ${state.par}\n${grid}\n`;
+  return `${state.seedLabel} · ${meta.label}${date}\n🏆 ${score} pts · ${skill}\n${ribbonLine}${grid}\n`;
 }
 
 $("#copy-btn").addEventListener("click", async () => {
