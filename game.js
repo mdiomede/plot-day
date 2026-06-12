@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.8"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.9"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1357,8 +1357,12 @@ function renderScene() {
   const winter = state.season === "winter";
   const at = (x, y, sw, sh, svg, cls = "") =>
     `<div class="structure ${cls}" style="grid-area:${y + 1} / ${x + 1} / span ${sh} / span ${sw}">${svg}</div>`;
+  // fence orientation reads the ORIGINAL yard: felling one of a vertical
+  // pair must not flip the survivor horizontal (it keeps its run's line)
   const kind = (x, y) =>
-    x >= 0 && x < W && y >= 0 && y < H ? state.grid[y][x].obstacle : null;
+    x >= 0 && x < W && y >= 0 && y < H
+      ? (state.grid[y][x].obstacle || (state.baseObstacles ? state.baseObstacles[y][x] : null))
+      : null;
 
   const parts = [];
   const houses = [], garages = [];
@@ -1668,6 +1672,16 @@ function renderWater() {
       `<span class="wpip ${i < state.waterLeft ? "" : "spent"}"></span>`);
 }
 
+// The one stump on the board (a felled tree/fence), derived the same way
+// the ledger does it — no stored state to drift.
+function findStump() {
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++)
+      if (!state.grid[y][x].obstacle && state.baseObstacles[y][x])
+        return { x, y, kind: state.baseObstacles[y][x] };
+  return null;
+}
+
 function renderTools() {
   $("#tool-water").classList.toggle("is-selected", state.selected?.type === "water");
   $("#tool-shovel").classList.toggle("is-selected", state.selected?.type === "shovel");
@@ -1680,11 +1694,25 @@ function renderTools() {
     + `<small class="dock-label">barrel</small>`;
   const prune = $("#tool-prune");
   prune.classList.toggle("is-selected", state.selected?.type === "prune");
-  prune.disabled = state.pruneStock === 0 || state.resolved;
-  prune.innerHTML = (state.pruneStock > 0
-    ? `<span class="tool-face">${em("1fa93")}<span class="long-label"> Prune</span></span>`
-    : `<span class="tool-face">${em("1fa93")}<span class="long-label"> Pruned</span> ✓</span>`)
-    + `<small class="dock-label">prune</small>`;
+  if (state.pruneStock > 0) {
+    prune.disabled = state.resolved;
+    prune.innerHTML = `<span class="tool-face">${em("1fa93")}<span class="long-label"> Prune</span></span>`
+      + `<small class="dock-label">prune</small>`;
+    prune.title = "Fell one tree or fence segment to open up sun.\nA felled tree is lost mushroom real estate.\nOnce per garden — regrowable until you Finish.";
+  } else {
+    // the axe was swung: the same button undoes it — Regrow a tree,
+    // Rebuild a fence — unless something now squats on the stump
+    const stump = findStump();
+    const blocked = stump && (state.grid[stump.y][stump.x].plant || state.grid[stump.y][stump.x].barrel);
+    const verb = stump?.kind === "fence" ? "Rebuild" : "Regrow";
+    const icon = stump?.kind === "fence" ? "1fa93" : (state.season === "winter" ? "1f332" : "1f333");
+    prune.disabled = state.resolved || !stump || !!blocked;
+    prune.innerHTML = `<span class="tool-face">${em(icon)}<span class="long-label"> ${verb}</span></span>`
+      + `<small class="dock-label">${verb.toLowerCase()}</small>`;
+    prune.title = blocked
+      ? `Dig up what's on the stump tile to ${verb.toLowerCase()} it.`
+      : `${verb} the felled ${stump?.kind === "fence" ? "fence" : "tree"} — your prune comes back.`;
+  }
 }
 
 /* ---------- interactions ---------- */
@@ -1945,7 +1973,22 @@ $("#tool-reset").addEventListener("click", async () => {
 });
 
 $("#tool-water").addEventListener("click", () => selectTool("water"));
-$("#tool-prune").addEventListener("click", () => selectTool("prune"));
+$("#tool-prune").addEventListener("click", () => {
+  if (state.pruneStock > 0) return selectTool("prune");
+  // regrow/rebuild: the planning-phase undo for the axe
+  if (state.tutorial) return tutNudge(); // scripted lessons don't un-chop
+  if (state.resolved) return;
+  const stump = findStump();
+  if (!stump) return;
+  const cell = state.grid[stump.y][stump.x];
+  if (cell.plant || cell.barrel) return; // stump occupied: button is disabled anyway
+  cell.obstacle = state.baseObstacles[stump.y][stump.x];
+  state.pruneStock = 1;
+  state.selected = null;
+  recomputeSun();
+  sfx(stump.kind === "fence" ? "barrel" : "plant"); // wood knock vs soft tuck
+  renderAll();
+});
 $("#tool-shovel").addEventListener("click", () => selectTool("shovel"));
 
 document.querySelectorAll(".phase-btn").forEach(btn => {
