@@ -1,13 +1,12 @@
 # Plot Day design system (prototype)
 
-## Target art direction (locked June 10, 2026 — user references)
-Three reference images (lofi/Ghibli painterly: seaside café, coffee van under cherry blossom, café terrace over turquoise sea — screenshots in project folder) define the destination style:
-- **Feel**: soft painterly anime illustration, storybook warmth, "lofi girl" coziness
-- **Light**: one warm golden source, soft gradient skies, gentle atmospheric depth
-- **Foliage**: dense, layered leaf clusters with tonal variation — never flat fills
-- **Palette**: turquoise water-blue, warm cream, terracotta, leaf greens, blossom pink accents
-- **Materials**: warm wood, pale flagstone/cobble, terracotta pots, woven textures
-- **Production**: this fidelity requires raster assets (AI-generated, style-locked prompts), not hand-coded SVG. Tier 1: garden-portrait share image composed from sprite assets. Tier 2: board textures + sprites under crisp UI chrome. The current SVG scene layer is the placeholder until then.
+## Art direction (settled June 2026)
+The game's voice is the bespoke flat style — settled through live experiments, not a placeholder awaiting an art pass:
+- **Structures** (cottage, huts, garage annex, trees, evergreens, fences, barrel, greenhouse): hand-coded SVG in one shared hand — no outlines, tonal shading, light from the upper left, soft ground-shadow ellipse under everything.
+- **Crops & UI iconography**: bundled Twemoji SVGs (`assets/emoji/`), identical on every device and offline-safe, with hand-patched glyphs where Unicode falls short (plain pumpkin, kale, wintergreen, ribbons, tools).
+- **Tested and rejected — twice**: AI-generated watercolor/painterly raster art (board sprites, then the garden-portrait share card, removed v0.6.5). Composited painterly art against flat tiles reads as mixed-media slop. Do not reintroduce raster composites; charm comes from consistency.
+- **Share artifacts** are the emoji grid + ribbons: meaning over fidelity (Wordle ships gray squares).
+- Banked stage-2 experiment (explicitly not a commitment): an isometric 2.5D sprite mockup, only after the current style + motion feel finished.
 
 ## Theme
 Light, warm paper. Scene: a player at the kitchen table with morning coffee and sunlight; a dark theme would fight the entire premise of reading sunlight on a garden.
@@ -35,7 +34,7 @@ Strategy: committed. Warm cream paper carries the surface; soil browns and leaf 
 - Panels: `--card` white-cream, 2px `--paper-deep` border, 14px radius, soft drop shadow
 - Buttons: chunky, 2px borders, terracotta for primary with hard 4px bottom shadow (toy-like press)
 - Tiles: rounded 9px squares colored by sun level, sun pips top-left, status shown as inset ring
-- Emoji are the placeholder art layer; a full illustrated pass replaces them later
+- Crop emoji are the bundled Twemoji set — a deliberate, settled choice (readable at tile size, charming, consistent everywhere), not a placeholder
 
 ## Motion
 - Plant pop-in on placement, gentle sway on thriving plants after resolve
