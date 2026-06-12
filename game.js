@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.7"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.8"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -241,7 +241,9 @@ function newGame({ daily = true, season = null, replay = false } = {}) {
     state.dayNum = 0;
     state.seedLabel = "Practice plot";
     state.season = season || ["spring", "summer", "fall", "winter"][(Math.random() * 4) | 0];
+    state.practiceSeason = season || null; // the reroll chip re-asks for this
   }
+  state.isReplay = false;
 
   // Depth gate: roll candidate boards until the gold-par gap clears the
   // threshold (boards where greedy play is already optimal are flat days).
@@ -291,6 +293,7 @@ function newGame({ daily = true, season = null, replay = false } = {}) {
   if (replay && daily) {
     state.seedLabel += " · replay";
     state.dayNum = 0; // practice rules: no lock, no streak
+    state.isReplay = true; // but not reroll-able: this board IS the point
   }
   $("#bot-banner").hidden = true;
   renderAll();
@@ -1574,6 +1577,12 @@ function updateTally() {
       sum += state.resolved ? plantPoints(x, y) : pointsPreview(x, y);
     }
   chip.hidden = plants === 0;
+  // the same corner offers "reroll" while a PRACTICE plot is untouched —
+  // once anything is placed (or on daily/replay/tutorial) it never shows
+  const touched = plants > 0 ||
+    state.grid.flat().some(c => c.barrel) || state.pruneStock === 0;
+  $("#reroll-chip").hidden = !(state.dayNum === 0 && !state.isTutorialBoard &&
+    !state.tutorial && !state.isReplay && !state.resolved && !touched);
   const ghost = !state.resolved && thirsty > 0;
   chip.classList.toggle("ghost", ghost);
   // The dashed tally reads "if everything gets watered" — and that "if"
@@ -2223,18 +2232,26 @@ $("#today-return-btn").addEventListener("click", () => {
 
 /* ---------- practice / dev buttons ---------- */
 
+// Picking a plot brings you to it; the reroll chip lives ON the board, so
+// "not this one, next" never requires scrolling back down to these buttons.
 document.querySelectorAll(".dev-btn[data-season]").forEach(btn =>
   btn.addEventListener("click", () => {
     if (state.tutorial) return tutNudge(); // mid-lesson, the exit is the skip link
     newGame({ daily: false, season: btn.dataset.season });
-  }));
+    scrollTo(0, 0); // instant: a smooth scroll stutters when the background
+  }));            // gold solve lands mid-animation (main thread, ~200ms)
 $("#random-btn").addEventListener("click", () => {
   if (state.tutorial) return tutNudge();
   newGame({ daily: false });
+  scrollTo(0, 0);
 });
 $("#today-btn").addEventListener("click", () => {
   if (state.tutorial) return tutNudge();
   newGame({ daily: true });
+  scrollTo(0, 0);
+});
+$("#reroll-chip").addEventListener("click", () => {
+  newGame({ daily: false, season: state.practiceSeason }); // same ask, new roll
 });
 
 /* ---------- trophy cabinet: calendar, lifetime stats, first settings ----------

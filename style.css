@@ -562,6 +562,16 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   border-color: var(--dead);
 }
 .tally-chip[hidden] { display: none; }
+/* reroll: a tappable twin of the tally chip, terracotta so it reads as a verb */
+.reroll-chip {
+  cursor: pointer;
+  background: var(--terracotta);
+  border: 1.5px solid var(--terracotta-deep);
+  box-shadow: 0 2px 0 var(--terracotta-deep);
+  font-family: inherit;
+}
+.reroll-chip:active { transform: translateY(1px); box-shadow: 0 1px 0 var(--terracotta-deep); }
+.reroll-chip[hidden] { display: none; }
 .arc-label {
   text-align: center;
   margin: 0 0 8px;
@@ -1196,7 +1206,7 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 body.hardmode .pts-badge,
 body.hardmode .friend-badge,
 body.hardmode .zone-badge,
-body.hardmode .tally-chip { display: none !important; }
+body.hardmode #tally-chip { display: none !important; } /* the SCORE chip, not the reroll verb beside it */
 
 .results-x {
   position: absolute;
