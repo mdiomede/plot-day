@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.5.0"; // bump on each deploy so phones can verify updates
+const VERSION = "0.5.1"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1645,12 +1645,16 @@ $("#finish-btn").addEventListener("click", () => {
    Gold) is already in every ledger entry, so the future calendar can
    award all past days retroactively. */
 
+// art = bundled SVG in assets/emoji/ (drawn in the game's hand, same set
+// as the shovel & watering can — regenerate via the palette in git log).
+// emoji = the share-TEXT stand-in: text can only carry real unicode that
+// every platform's own font renders, so friends see the tier color there.
 const RIBBONS = {
-  rosette: { name: "Best in Show", emoji: "🏵️", petal: "#a06cc9", center: "#7e549f", shine: "#cfa9ea", tail: "#dcae3f" },
-  blue:    { name: "Blue Ribbon",  emoji: "🔵", petal: "#3f74d8", center: "#2f5cb4", shine: "#8fb2ef", tail: "#2f5cb4" },
-  red:     { name: "Red Ribbon",   emoji: "🔴", petal: "#d6492f", center: "#b03a24", shine: "#ef9077", tail: "#b03a24" },
-  white:   { name: "White Ribbon", emoji: "⚪", petal: "#f1ecdc", center: "#dcd4bd", shine: "#fffdf6", tail: "#cfc6ac" },
-  yellow:  { name: "Honorable Mention", emoji: "🟡", petal: "#ecc845", center: "#cfa92e", shine: "#f7e294", tail: "#cfa92e" },
+  rosette: { name: "Best in Show", emoji: "🏵️", art: "ribbon-rosette" },
+  blue:    { name: "Blue Ribbon",  emoji: "🔵", art: "ribbon-blue" },
+  red:     { name: "Red Ribbon",   emoji: "🔴", art: "ribbon-red" },
+  white:   { name: "White Ribbon", emoji: "⚪", art: "ribbon-white" },
+  yellow:  { name: "Honorable Mention", emoji: "🟡", art: "ribbon-yellow" },
 };
 
 function ribbonFor(score, gold) {
@@ -1663,20 +1667,8 @@ function ribbonFor(score, gold) {
   return null; // the judges walked past
 }
 
-// rosette drawn in the game's own hand: pleated ring, button center, tails
-function ribbonSVG(rb) {
-  let petals = "";
-  for (let i = 0; i < 8; i++) {
-    const a = (i * 45 * Math.PI) / 180;
-    petals += `<circle cx="${(50 + 24 * Math.cos(a)).toFixed(1)}" cy="${(42 + 24 * Math.sin(a)).toFixed(1)}" r="11.5" fill="${rb.petal}"/>`;
-  }
-  return `<svg class="ribbon-svg" viewBox="0 0 100 100">
-    <path d="M37,58 L27,93 L38,87 L45,96 Z" fill="${rb.tail}"/>
-    <path d="M63,58 L73,93 L62,87 L55,96 Z" fill="${rb.tail}"/>
-    ${petals}
-    <circle cx="50" cy="42" r="18" fill="${rb.center}"/>
-    <circle cx="44" cy="36" r="5.5" fill="${rb.shine}"/>
-  </svg>`;
+function ribbonImg(rb) {
+  return `<img class="ribbon-svg" src="assets/emoji/${rb.art}.svg" alt="">`;
 }
 
 function showResults() {
@@ -1723,7 +1715,7 @@ function refreshGoldUI() {
   const rb = ribbonFor(score, state.gold);
   const ribbonLine = $("#ribbon-line");
   ribbonLine.hidden = !rb;
-  if (rb) ribbonLine.innerHTML = ribbonSVG(rb) + `<span class="ribbon-name">${rb.name}</span>`;
+  if (rb) ribbonLine.innerHTML = ribbonImg(rb) + `<span class="ribbon-name">${rb.name}</span>`;
   $("#bot-btn").disabled = !state.goldLayout;
   state.lastShare = buildShareText(score); // raw text for the clipboard
   $("#share-head").textContent = state.lastShare.split("\n").slice(0, 3).join("\n");
