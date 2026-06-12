@@ -548,6 +548,11 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   color: var(--ink);
   border: 1.5px dashed var(--ink-soft);
 }
+/* the plan outruns the water: the "if watered" promise can't be kept */
+.tally-chip.ghost.over {
+  color: var(--dead);
+  border-color: var(--dead);
+}
 .tally-chip[hidden] { display: none; }
 .arc-label {
   text-align: center;

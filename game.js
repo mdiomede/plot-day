@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.7.1"; // bump on each deploy so phones can verify updates
+const VERSION = "0.7.2"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1562,18 +1562,28 @@ function renderBoard() {
 // solid once every plant has its drink (or the day is done).
 function updateTally() {
   const chip = $("#tally-chip");
-  let sum = 0, plants = 0, thirsty = 0;
+  let sum = 0, plants = 0, thirsty = 0, need = 0;
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const p = state.grid[y][x].plant;
       if (!p) continue;
       plants++;
-      if (!p.watered) thirsty++;
+      if (!p.watered) { thirsty++; need += waterCost(x, y, p.def); }
       sum += state.resolved ? plantPoints(x, y) : pointsPreview(x, y);
     }
   chip.hidden = plants === 0;
-  chip.classList.toggle("ghost", !state.resolved && thirsty > 0);
-  chip.innerHTML = `${em("1f3c6")} ${sum}`;
+  const ghost = !state.resolved && thirsty > 0;
+  chip.classList.toggle("ghost", ghost);
+  // The dashed tally reads "if everything gets watered" — and that "if"
+  // must stay honest. When the plan outruns the can, say by how much;
+  // never silently cap (choosing what goes thirsty is the player's call).
+  const short = ghost ? Math.max(0, need - state.waterLeft) : 0;
+  chip.classList.toggle("over", short > 0);
+  chip.innerHTML = `${em("1f3c6")} ${sum}` +
+    (short > 0 ? ` ${em("1f4a7")}−${short}` : "");
+  chip.title = short > 0
+    ? `If everything were watered… but watering the rest needs ${need}💧 and you have ${state.waterLeft}.\nSomething here goes thirsty — this number isn't reachable as planted.`
+    : ghost ? "Your plan's worth, once everything placed is watered." : "";
 }
 
 function statusLabel(s) {
