@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.4"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.5"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1730,6 +1730,7 @@ function onTileClick(x, y) {
       cell.plant.watered = false;
       state.waterLeft += cell.plant.paid; // paid is always set when watered (may be 0)
       cell.plant.paid = 0;
+      sfx("unwater");
     } else {
       const cost = waterCost(x, y, cell.plant.def);
       if (state.waterLeft < cost) return waterDenied();
@@ -1744,6 +1745,7 @@ function onTileClick(x, y) {
   } else if (sel.type === "shovel" && cell.barrel) {
     // removing the barrel un-waters neighbors that enjoyed its discount,
     // so the discount can't be farmed by re-placing the barrel elsewhere
+    let drained = false;
     for (const [dx, dy] of DIRS) {
       const nx = x + dx, ny = y + dy;
       if (nx < 0 || nx >= W || ny < 0 || ny >= H) continue;
@@ -1752,12 +1754,15 @@ function onTileClick(x, y) {
         state.waterLeft += n.plant.paid;
         n.plant.watered = false;
         n.plant.paid = 0;
+        drained = true;
         if (n.plant.def.tall) recomputeSun();
       }
     }
     cell.barrel = false;
     state.barrelStock++;
     sfx("dig");
+    // the cascade speaks too: discounted neighbors just lost their drink
+    if (drained) setTimeout(() => sfx("unwater"), 130);
     renderAll();
   } else if (sel.type === "shovel" && cell.plant) {
     const slot = state.packet.find(s => s.def === cell.plant.def);
@@ -1831,6 +1836,14 @@ function sfx(name) {
       const at = t + 0.02 + Math.random() * 0.26;
       const f = 450 + Math.random() * 950;
       tone(ctx, { freq: f, t0: at, dur: 0.05 + Math.random() * 0.05, vol: 0.05 + Math.random() * 0.03, slideTo: f * 1.8 });
+    }
+  } else if (name === "unwater") {
+    // the drink drains back out: a few droplets falling, pitch sliding
+    // down — the watering chirps in reverse, quieter (undo whispers)
+    for (let i = 0; i < 4; i++) {
+      const at = t + 0.01 + i * 0.05;
+      const f = 720 - i * 115;
+      tone(ctx, { freq: f, t0: at, dur: 0.06, vol: 0.05, slideTo: f * 0.6 });
     }
   } else if (name === "dig") { // shovel scoop
     noise(ctx, { t0: t, dur: 0.14, vol: 0.2, filterFreq: 1400, sweepTo: 500 });
