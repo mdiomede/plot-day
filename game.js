@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.0"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.1"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -2293,13 +2293,18 @@ function renderCalendar() {
 function showCalDetail(plot) {
   const box = $("#cal-detail");
   const tp = todayPlot();
+  // the tapped day lights up leaf-green so the detail card below needs no
+  // cross-referencing (today keeps its terracotta ring; selection wins)
+  $("#cal-grid").querySelectorAll(".cal-cell.selected")
+    .forEach(el => el.classList.remove("selected"));
   if (plot < 1 || plot > tp) { box.hidden = true; return; }
+  $("#cal-grid").querySelector(`button[data-plot="${plot}"]`)?.classList.add("selected");
   const dateTxt = plotDate(plot).toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const e = loadStore().ledger.find(x => x.plot === plot);
   if (!e) {
     box.innerHTML = plot === tp
-      ? `<b>Plot #${plot} · ${dateTxt}</b> — today's plot is still waiting for its gardener.`
-      : `<b>Plot #${plot} · ${dateTxt}</b> — no garden grown this day.`;
+      ? `<b>Plot #${plot} · ${dateTxt}:</b> today's plot is still waiting for its gardener.`
+      : `<b>Plot #${plot} · ${dateTxt}:</b> no garden grown this day.`;
   } else {
     const meta = SEASON_META[e.season];
     const rb = ribbonFor(e.score, e.gold);

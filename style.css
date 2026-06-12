@@ -1138,6 +1138,8 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 .cal-cell.off { opacity: .3; cursor: default; }
 .cal-cell.missed { background: transparent; }
 .cal-cell.today { border: 2px solid var(--terracotta); }
+/* the day whose card is open below — leaf, so it never reads as "today" */
+.cal-cell.selected { border: 2px solid var(--leaf-deep); background: #e9f1da; }
 .cal-cell i {
   position: absolute; top: 2px; left: 4px;
   font-style: normal; font-size: .55rem; font-weight: 800;
