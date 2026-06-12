@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.6"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.7"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -2274,7 +2274,10 @@ function renderCabinet() {
     if (e.score > e.gold) beaten++;
     skillSum += e.skill;
   }
-  $("#cabinet-shelf").innerHTML = Object.keys(RIBBONS).map(k =>
+  // ascending, humblest first: earned ribbons fill from the left and the
+  // dim slots ahead read as "still to climb" (a cabinet is a ladder, not
+  // a medal table — Best in Show waits at the end as the goal)
+  $("#cabinet-shelf").innerHTML = Object.keys(RIBBONS).reverse().map(k =>
     `<span class="shelf-slot${counts[k] ? "" : " none"}" title="${RIBBONS[k].name}">${ribbonImg(RIBBONS[k])}<b>×${counts[k]}</b></span>`).join("");
   const stats = $("#cabinet-stats");
   if (!led.length) {
