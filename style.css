@@ -374,7 +374,13 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   background: #f5a623;
   box-shadow: 0 0 0 1px rgba(255,255,255,.6);
 }
-.pip.off { background: rgba(74,59,42,.18); box-shadow: none; }
+/* empty pip = hollow socket: light fill + dark ring reads on every
+   seasonal palette (a flat low-alpha dot vanished on winter's pale tiles) */
+.pip.off {
+  background: rgba(255, 255, 255, .4);
+  border: 1.2px solid rgba(74, 59, 42, .5);
+  box-shadow: none;
+}
 
 /* ghost shade: what watering the placed talls would add */
 .tile .gveil {
@@ -403,7 +409,9 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 .board[data-view="am"]   .tile.shade-am   .veil,
 .board[data-view="noon"] .tile.shade-noon .veil,
 .board[data-view="pm"]   .tile.shade-pm   .veil { opacity: 1; }
-.board:not([data-view="day"]) .pips { opacity: .25; }
+/* phase views: pips step back so the shade veils star — but stay countable
+   (.25 forced a round-trip to all-day just to read a shaded tile's sun) */
+.board:not([data-view="day"]) .pips { opacity: .45; }
 
 /* plant on tile */
 .tile .crop {
