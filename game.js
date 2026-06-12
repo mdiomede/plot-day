@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.6.6"; // bump on each deploy so phones can verify updates
+const VERSION = "0.7.0"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -132,15 +132,21 @@ const CATALOG = {
     { id: "sunflower",  name: "Sunflower",  emoji: "🌻", sun: 3, water: 1, pts: 4, friends: [], tall: true,
       why: "Grows tall when watered and casts shade — a tool more than a crop." },
   ],
-  winter: [ // a hardy outdoor winter garden
+  winter: [ // hardy crops brave the snow; tender ones live or die by the glass
+    { id: "tomato",     name: "Tomato",     emoji: "🍅", sun: 3, water: 2, pts: 12, friends: ["lettuce"], enemies: ["pepper"], tender: true,
+      why: "Winter's prize — and it dies outside, full stop. Under glass, growers tuck quick lettuce between the slow tomato beds. Keep peppers apart: clustered nightshades share disease." },
     { id: "brusselish", name: "Winter Broccoli", emoji: "🥦", sun: 2, water: 2, pts: 10, friends: ["onion", "garlic"],
       why: "Overwintering brassicas are winter's workhorses — alliums keep their pests away." },
+    { id: "pepper",     name: "Chili Pepper", emoji: "🌶️", sun: 2, water: 2, pts: 8, friends: [], enemies: ["tomato"], tender: true,
+      why: "Peppers sulk below 50°F and freeze outside — greenhouse only. Tomatoes are kin: clustered nightshades share disease." },
     { id: "garlic",     name: "Garlic",     emoji: "🧄", sun: 2, water: 1, pts: 6, friends: ["brusselish"],
       why: "Garlic is planted into winter by tradition — and its scent shields brassicas." },
     { id: "onion",      name: "Onion",      emoji: "🧅", sun: 2, water: 1, pts: 6, friends: ["brusselish"],
       why: "Overwintering onions sit happily under the snow line." },
     { id: "wintergreen", name: "Winter Greens", emoji: "🥬", sun: 1, water: 1, pts: 5, friends: [],
       why: "Hardy greens that sweeten in the cold and shrug off frost." },
+    { id: "lettuce",    name: "Lettuce",    emoji: "🥬", sun: 1, water: 1, pts: 5, friends: ["tomato"], tender: true,
+      why: "The tender twin of winter greens: same easy keeper, but frost kills it outright. Under glass it tucks happily between the tomatoes." },
     { id: "mushroom",   name: "Mushroom",   emoji: "🍄", sun: 0, water: 1, pts: 7, friends: [], lovesTrees: true,
       why: "Winter oyster mushrooms partner with the evergreens (mycorrhiza)." },
   ],
@@ -259,8 +265,8 @@ function newGame({ daily = true, season = null, replay = false } = {}) {
 
   // restore the picked board (the gate loop may have rolled past it)
   state.sunArc = pick.board.arc;
-  state.grid = pick.board.obstacles.map(row =>
-    row.map(o => ({ obstacle: o, plant: null, barrel: false })));
+  state.grid = pick.board.obstacles.map((row, y) =>
+    row.map((o, x) => ({ obstacle: o, plant: null, barrel: false, inside: pick.board.inside[y][x] })));
   recomputeSun();
   state.packet = pick.board.defs.map((def, i) => ({ def, qty: pick.board.qty[i] }));
   state.waterMax = pick.board.waterMax;
@@ -408,6 +414,11 @@ function generateYard() {
     }
   }
 
+  // Greenhouse (winter only): a glass shelter placed like the house, but
+  // its footprint IS the plantable interior — the only ground where
+  // tender crops survive. Glass casts no shade (h would be 0 anyway).
+  if (state.season === "winter") placeGreenhouse();
+
   // Trees: 3-4
   const nTrees = 3 + Math.floor(r() * 2);
   for (let i = 0; i < nTrees; i++) placeRandomObstacle("tree");
@@ -422,7 +433,8 @@ function generateYard() {
     for (let j = 0; j < len; j++) {
       const cy = fy + (horiz ? 0 : j), cx = fx + (horiz ? j : 0);
       const cell = state.grid[cy][cx];
-      if (!cell.obstacle && !state.reservedCells.has(cx + "," + cy)) cell.obstacle = "fence";
+      if (!cell.obstacle && !cell.inside && !state.reservedCells.has(cx + "," + cy))
+        cell.obstacle = "fence";
     }
   }
 }
@@ -431,10 +443,36 @@ function placeRandomObstacle(kind) {
   const r = state.rng;
   for (let tries = 0; tries < 40; tries++) {
     const x = Math.floor(r() * W), y = Math.floor(r() * H);
-    if (!state.grid[y][x].obstacle && !state.reservedCells.has(x + "," + y)) {
+    if (!state.grid[y][x].obstacle && !state.grid[y][x].inside &&
+        !state.reservedCells.has(x + "," + y)) {
       state.grid[y][x].obstacle = kind;
       return;
     }
+  }
+}
+
+// 2x2 to 2x3 glass footprint, anywhere the yard is clear (garage-door
+// approaches stay open too — nobody glasses in their own driveway).
+function placeGreenhouse() {
+  const r = state.rng;
+  const sizes = [[2, 2], [3, 2], [2, 3]];
+  const want = sizes[Math.floor(r() * sizes.length)];
+  for (const [gw, gh] of [want, [2, 2]]) { // a 2x2 always fits somewhere
+    const spots = [];
+    for (let gy = 0; gy + gh <= H; gy++)
+      for (let gx = 0; gx + gw <= W; gx++) {
+        let ok = true;
+        for (let dy = 0; dy < gh && ok; dy++)
+          for (let dx = 0; dx < gw && ok; dx++)
+            if (state.grid[gy + dy][gx + dx].obstacle ||
+                state.reservedCells.has((gx + dx) + "," + (gy + dy))) ok = false;
+        if (ok) spots.push([gx, gy]);
+      }
+    if (!spots.length) continue;
+    const [gx, gy] = spots[Math.floor(r() * spots.length)];
+    for (let dy = 0; dy < gh; dy++)
+      for (let dx = 0; dx < gw; dx++) state.grid[gy + dy][gx + dx].inside = true;
+    return;
   }
 }
 
@@ -458,11 +496,13 @@ function generatePacket() {
   // CRAFT by planting talls to close open phases (shade engineering).
   const sunCounts = [0, 0, 0, 0];
   const craftable = [0, 0, 0, 0];
+  const insideSuns = []; // sun levels of greenhouse tiles (tender-only homes)
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       if (state.grid[y][x].obstacle) continue;
       const sun = state.sun[y][x];
       sunCounts[sun]++;
+      if (state.grid[y][x].inside) insideSuns.push(sun);
       if (!hasTalls) continue;
       const open = PHASES.filter(p => !state.shadePhases[y][x].has(p));
       const closable = open.filter(p => phaseClosable(x, y, p)).length;
@@ -474,6 +514,16 @@ function generatePacket() {
   let needsEngineering = false;
   state.packet = CATALOG[state.season].map(def => {
     let qty = def.tall ? 1 + Math.floor(r() * 2) : 2 + Math.floor(r() * 2); // tall:1-2, rest:2-3
+    if (def.tender) {
+      // Shelter triage: tender crops live or die by the glasshouse, so
+      // their qty looks only at interior tiles — and deliberately stays
+      // bigger than the shelter some days. That IS the day's question.
+      const exact = insideSuns.filter(s => s === def.sun).length;
+      const near = insideSuns.filter(s => Math.abs(s - def.sun) <= 1).length;
+      if (near === 0) qty = 0;                  // nowhere under glass it can live
+      else if (exact === 0) qty = Math.min(qty, 2); // it could only hang on
+      return { def, qty };
+    }
     const fits = sunCounts[def.sun];
     const buildable = Math.min(craftable[def.sun], 3);
     if (fits === 0 && buildable === 0) qty = 0;
@@ -491,8 +541,10 @@ function generatePacket() {
 
   // Water covers ~65-80% of the packet's full cost (the barrel no longer
   // adds water, it discounts neighbors). You can't grow everything.
+  // Winter ships a touch generous: shelter triage is squeeze enough.
   const totalWater = state.packet.reduce((n, s) => n + s.qty * s.def.water, 0);
-  state.waterMax = Math.max(5, Math.round(totalWater * (0.65 + r() * 0.15)));
+  const frac = (state.season === "winter" ? 0.72 : 0.65) + r() * 0.15;
+  state.waterMax = Math.max(5, Math.round(totalWater * frac));
   state.waterLeft = state.waterMax;
   state.barrelStock = 1; // one rain barrel per board: discounts neighbors, costs a tile
 }
@@ -545,11 +597,17 @@ function recomputeSun() {
 
 /* ---------- plant status ---------- */
 
+// Shelter is life too: tender crops freeze outside the greenhouse.
+function frozenOut(x, y, def) {
+  return !!def.tender && state.season === "winter" && !state.grid[y][x].inside;
+}
+
 // Water is life: unwatered plants die. Watered: exact sun = thrive,
 // sun off by one = hanging on, off by two or more = dead anyway.
 function plantStatus(x, y) {
   const p = state.grid[y][x].plant;
   if (!p) return null;
+  if (frozenOut(x, y, p.def)) return "dead";
   const gap = Math.abs(state.sun[y][x] - p.def.sun);
   if (gap >= 2 || !p.watered) return "dead";
   return gap === 0 ? "thrive" : "ok";
@@ -589,7 +647,8 @@ function projectedSun(x, y) {
 function potentialBonus(x, y) {
   const p = state.grid[y][x].plant;
   if (!p) return 0;
-  const viable = (px, py, d) => Math.abs(projectedSun(px, py) - d.sun) < 2;
+  const viable = (px, py, d) =>
+    !frozenOut(px, py, d) && Math.abs(projectedSun(px, py) - d.sun) < 2;
   if (!viable(x, y, p.def)) return 0;
   let net = 0;
   for (const [dx, dy] of DIRS) {
@@ -605,11 +664,19 @@ function potentialBonus(x, y) {
   return net;
 }
 
+// A barrel left outdoors in winter freezes solid: no discount, no badges.
+// (Placing it is still allowed — the shovel refunds fully, so the lesson
+// is free. Under glass it works normally and competes for shelter tiles.)
+function barrelFrozen(x, y) {
+  return state.season === "winter" && !state.grid[y][x].inside;
+}
+
 // The rain barrel discounts watering for adjacent plants (min cost 1).
 function nearBarrel(x, y) {
   return DIRS.some(([dx, dy]) => {
     const nx = x + dx, ny = y + dy;
-    return nx >= 0 && nx < W && ny >= 0 && ny < H && state.grid[ny][nx].barrel;
+    return nx >= 0 && nx < W && ny >= 0 && ny < H &&
+      state.grid[ny][nx].barrel && !barrelFrozen(nx, ny);
   });
 }
 function waterCost(x, y, def) {
@@ -630,6 +697,7 @@ function pointsPreview(x, y) {
   const p = state.grid[y][x].plant;
   if (!p) return 0;
   if (p.watered) return plantPoints(x, y);
+  if (frozenOut(x, y, p.def)) return 0; // no amount of water thaws it
   const gap = Math.abs(projectedSun(x, y) - p.def.sun);
   if (gap >= 2) return 0;
   const base = gap === 0 ? p.def.pts : Math.ceil(p.def.pts / 2);
@@ -667,6 +735,7 @@ function computePar() {
       for (let y = 0; y < H; y++)
         for (let x = 0; x < W; x++) {
           if (placed[y][x] || state.grid[y][x].obstacle) continue;
+          if (frozenOut(x, y, item.def)) continue; // tender can't live out here
           const gap = Math.abs(sun[y][x] - item.def.sun);
           if (gap >= 2) continue;
           if (!best || gap < best.gap) best = { x, y, gap };
@@ -715,6 +784,8 @@ function depthThreshold(par) {
 function snapshotBoard() {
   return {
     obstacles: state.grid.map(row => row.map(c => c.obstacle)),
+    inside: state.grid.map(row => row.map(c => !!c.inside)),
+    season: state.season,
     arc: state.sunArc,
     defs: state.packet.map(s => s.def),
     qty: state.packet.map(s => s.qty),
@@ -723,16 +794,19 @@ function snapshotBoard() {
 }
 
 function solveGold(board, seed, iterations, wantLayout = false) {
-  const { obstacles, arc, defs, qty, waterMax } = board;
+  const { obstacles, arc, defs, qty, waterMax, inside, season } = board;
+  const winter = season === "winter";
   const rng = mulberry32(seed);
   const arcDef = SUN_ARCS[arc];
   const N = W * H;
   const obst = new Array(N).fill(null);
+  const ins = new Uint8Array(N); // greenhouse interior: tender-safe, barrel-safe
   const tiles = [];
   for (let y = 0; y < H; y++)
     for (let x = 0; x < W; x++) {
       const i = y * W + x;
       obst[i] = obstacles[y][x];
+      if (inside && inside[y][x]) ins[i] = 1;
       if (!obstacles[y][x]) tiles.push(i);
     }
 
@@ -782,7 +856,7 @@ function solveGold(board, seed, iterations, wantLayout = false) {
       if (plant[i] < 0) continue;
       const d = defs[plant[i]];
       let cost = d.water;
-      if (barrelPos >= 0) {
+      if (barrelPos >= 0 && (!winter || ins[barrelPos])) { // frozen barrel: no discount
         const dx = Math.abs((i % W) - (barrelPos % W));
         const dy = Math.abs(((i / W) | 0) - ((barrelPos / W) | 0));
         if (dx + dy === 1) cost = Math.max(0, cost - 1);
@@ -795,6 +869,7 @@ function solveGold(board, seed, iterations, wantLayout = false) {
     for (let i = 0; i < N; i++) {
       if (plant[i] < 0) continue;
       const d = defs[plant[i]];
+      if (winter && d.tender && !ins[i]) continue; // froze outside the glass
       const sun = 3 - (am[i] + noon[i] + pm[i]);
       const gap = Math.abs(sun - d.sun);
       if (gap >= 2) continue;
@@ -832,6 +907,7 @@ function solveGold(board, seed, iterations, wantLayout = false) {
         let best = -1, bestGap = 99;
         for (const i of tiles) {
           if (plant[i] >= 0) continue;
+          if (winter && defs[di].tender && !ins[i]) continue;
           const sun = 3 - (am[i] + noon[i] + pm[i]);
           const gap = Math.abs(sun - defs[di].sun);
           if (gap >= 2) continue;
@@ -932,9 +1008,22 @@ function solveGold(board, seed, iterations, wantLayout = false) {
       }
     } else if (undo) undo();
   }
-  return wantLayout
-    ? { score: best, plant: bestPlant, barrelPos: bestBarrel, pruned: bestPruned }
-    : best;
+  if (!wantLayout) return best;
+  // Tidy the reveal: dead non-tall plants and a frozen barrel score nothing,
+  // but they'd make the bot's garden look like littering. Stripping them is
+  // score-neutral (dead plants feed no companion math; talls are kept — a
+  // watered tall casts its shadow even while dying).
+  plant.length = 0; plant.push(...bestPlant);
+  barrelPos = bestBarrel; pruned = bestPruned;
+  castAll();
+  for (let i = 0; i < N; i++) {
+    if (plant[i] < 0 || defs[plant[i]].tall) continue;
+    const d = defs[plant[i]];
+    const sun = 3 - (am[i] + noon[i] + pm[i]);
+    if ((winter && d.tender && !ins[i]) || Math.abs(sun - d.sun) >= 2) plant[i] = -1;
+  }
+  if (barrelPos >= 0 && winter && !ins[barrelPos]) barrelPos = -1;
+  return { score: best, plant: plant.slice(), barrelPos, pruned };
 }
 
 /* ---------- illustrated scene (SVG structures over the grid) ---------- */
@@ -1197,6 +1286,69 @@ const SVG_BARREL = `
   <ellipse cx="43" cy="21.5" rx="8" ry="3" fill="#d6ecf4"/>
 </svg>`;
 
+// The same barrel left out in a winter yard: frosty wood, the water a
+// cracked ice sheet, icicles off the rim. Pure consequence-art — the
+// shovel refunds fully, so discovering this costs nothing.
+const SVG_BARREL_ICE = `
+<svg viewBox="0 0 100 100" class="barrel-art">
+  <ellipse cx="50" cy="90" rx="29" ry="5" fill="rgba(46,62,33,.22)"/>
+  <path d="M26,24 C20,52 21,70 30,86 a38 11 0 0 0 40 0 C79,70 80,52 74,24" fill="#9b8261"/>
+  <path d="M26,24 C20,52 21,70 30,86 a38 11 0 0 0 12 4 C32,72 30,48 33,24 Z" fill="#b09574"/>
+  <path d="M23.5,46 L76.5,46 L76,52 L24,52 Z" fill="#75634d"/>
+  <path d="M25,66 L75,66 L74.4,72 L25.6,72 Z" fill="#75634d"/>
+  <ellipse cx="50" cy="24" rx="24" ry="9" fill="#cfe7f0"/>
+  <ellipse cx="50" cy="23" rx="24" ry="8" fill="#e8f5fa"/>
+  <path d="M33,22 L45,25 L42,20.5 L57,24 L54,19.5 L66,22.5" stroke="#a8cddc" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M34,30 l2.5,10 l2.5,-9 Z" fill="#d8edf5"/>
+  <path d="M47,31 l2,6.5 l2,-6 Z" fill="#e8f5fa"/>
+  <path d="M62,30.5 l2.2,8.5 l2.3,-8 Z" fill="#d8edf5"/>
+  <ellipse cx="41" cy="20.5" rx="9" ry="3" fill="#ffffff" opacity=".9"/>
+  <ellipse cx="38" cy="47.5" rx="10" ry="2.4" fill="#ffffff" opacity=".75"/>
+</svg>`;
+
+// Greenhouse: a plan-view glass roof you garden through — white frame,
+// near-transparent panes (the crops beneath ARE the picture), a snowy
+// ridge along the long axis, diagonal shine. Any 2x2/2x3 footprint.
+function svgGreenhouse(w, h) {
+  const Wp = w * 100, Hp = h * 100;
+  const horiz = w >= h;                       // ridge runs the long way
+  const L = horiz ? Wp : Hp, C = horiz ? Hp : Wp, mid = C / 2;
+  const pt = (a, c) => horiz ? `${a},${c}` : `${c},${a}`; // along,across -> x,y
+  let mull = ""; // glazing bars, perpendicular to the ridge
+  for (let a = 50; a <= L - 50; a += 50)
+    mull += `M${pt(a, 16)} L${pt(a, C - 16)} `;
+  // lumpy snow band sitting on the ridge
+  let a = 18, k = 0, snow = `M${pt(18, mid - 3)}`;
+  while (a + 36 <= L - 18) { snow += ` q${pt(18, k % 2 ? -8 : -12)} ${pt(36, 0)}`; a += 36; k++; }
+  snow += ` L${pt(a, mid + 4)} L${pt(18, mid + 4)} Z`;
+  const ridge = horiz
+    ? `<rect x="12" y="${mid - 6}" width="${Wp - 24}" height="12" rx="6" fill="#eef5f6"/>
+       <rect x="12" y="${mid - 6}" width="${Wp - 24}" height="5" rx="2.5" fill="#fdfefe"/>`
+    : `<rect x="${mid - 6}" y="12" width="12" height="${Hp - 24}" rx="6" fill="#eef5f6"/>
+       <rect x="${mid - 6}" y="12" width="5" height="${Hp - 24}" rx="2.5" fill="#fdfefe"/>`;
+  const panes = horiz // the half facing the light reads a touch lighter
+    ? `<rect x="10" y="10" width="${Wp - 20}" height="${mid - 10}" fill="#d8edf6" opacity=".28"/>
+       <rect x="10" y="${mid}" width="${Wp - 20}" height="${Hp - mid - 10}" fill="#9fcfe2" opacity=".32"/>`
+    : `<rect x="10" y="10" width="${mid - 10}" height="${Hp - 20}" fill="#d8edf6" opacity=".28"/>
+       <rect x="${mid}" y="10" width="${Wp - mid - 10}" height="${Hp - 20}" fill="#9fcfe2" opacity=".32"/>`;
+  return `<svg viewBox="0 0 ${Wp} ${Hp}" overflow="visible">
+    <ellipse cx="${Wp / 2}" cy="${Hp - 4}" rx="${Wp / 2 - 8}" ry="6" fill="rgba(46,62,33,.18)"/>
+    <defs><clipPath id="gh-pane"><rect x="10" y="10" width="${Wp - 20}" height="${Hp - 20}" rx="8"/></clipPath></defs>
+    ${panes}
+    <g clip-path="url(#gh-pane)" stroke="#ffffff" stroke-linecap="round" fill="none">
+      <path d="M${Wp * 0.62},-20 L${Wp * 0.62 - Hp - 40},${Hp + 20}" stroke-width="18" opacity=".20"/>
+      <path d="M${Wp * 0.80},-20 L${Wp * 0.80 - Hp - 40},${Hp + 20}" stroke-width="7" opacity=".24"/>
+    </g>
+    <path d="${mull}" stroke="#f4f9fa" stroke-width="3" opacity=".8" fill="none"/>
+    ${ridge}
+    <path d="${snow}" fill="#ffffff" opacity=".96"/>
+    <rect x="6" y="6" width="${Wp - 12}" height="${Hp - 12}" rx="11" fill="none" stroke="#c9dde2" stroke-width="11"/>
+    <rect x="6" y="6" width="${Wp - 12}" height="${Hp - 12}" rx="11" fill="none" stroke="#eff6f7" stroke-width="7"/>
+    <ellipse cx="${Wp - 28}" cy="8" rx="16" ry="5" fill="#ffffff" opacity=".9"/>
+    <ellipse cx="26" cy="${Hp - 8}" rx="13" ry="4.5" fill="#ffffff" opacity=".85"/>
+  </svg>`;
+}
+
 function renderScene() {
   const winter = state.season === "winter";
   const at = (x, y, sw, sh, svg, cls = "") =>
@@ -1250,6 +1402,17 @@ function renderScene() {
     parts.push(at(gx, gy, horiz ? 2 : 1, horiz ? 1 : 2, svgGarage(horiz), cls));
   } else for (const [x, y] of garages) parts.push(at(x, y, 1, 1, svgGarage(true)));
 
+  // the glasshouse spans its interior tiles (winter boards only); painted
+  // last so its panes wash over whatever grows beneath them
+  let g0 = null, g1 = null;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++)
+      if (state.grid[y][x].inside) { if (!g0) g0 = [x, y]; g1 = [x, y]; }
+  if (g0) {
+    const gw = g1[0] - g0[0] + 1, gh = g1[1] - g0[1] + 1;
+    parts.push(at(g0[0], g0[1], gw, gh, svgGreenhouse(gw, gh), "s-glass"));
+  }
+
   return `<div class="scene" style="grid-template-columns:repeat(${W},1fr);grid-template-rows:repeat(${H},1fr)">${parts.join("")}</div>`;
 }
 
@@ -1291,6 +1454,7 @@ function renderBoard() {
       const cell = state.grid[y][x];
       const t = document.createElement("div");
       t.className = "tile";
+      if (cell.inside) t.classList.add("inside");
       t.dataset.x = x; t.dataset.y = y;
       t.dataset.sun = state.sun[y][x];
 
@@ -1311,10 +1475,13 @@ function renderBoard() {
         t.insertAdjacentHTML("beforeend", `<span class="pips">${pips}</span>`);
 
         if (cell.barrel) {
-          t.insertAdjacentHTML("beforeend", BOARD_ART
+          const frozen = barrelFrozen(x, y);
+          t.insertAdjacentHTML("beforeend", frozen ? SVG_BARREL_ICE : (BOARD_ART
             ? `<img class="crop-art" src="assets/Wooden Water Barrel.jpg" alt="rain barrel">`
-            : SVG_BARREL);
-          t.title = "Rain barrel: adjacent plants cost 1 less water.\nDigging it up un-waters its discounted neighbors.";
+            : SVG_BARREL));
+          t.title = frozen
+            ? "Frozen solid — barrels need shelter in winter.\nDig it up (full refund) and try it under glass."
+            : "Rain barrel: adjacent plants cost 1 less water.\nDigging it up un-waters its discounted neighbors.";
         } else if (cell.plant) {
           const status = plantStatus(x, y);
           const net = companionBonus(x, y);
@@ -1365,14 +1532,16 @@ function renderBoard() {
           const pts = pointsPreview(x, y);
           t.insertAdjacentHTML("beforeend",
             `<span class="pts-badge${cell.plant.watered ? "" : " ghost"}${pts === 0 ? " zero" : ""}">${pts}</span>`);
-          t.title = `${cell.plant.def.name}: ${statusLabel(status)}` +
+          const frozenPlant = frozenOut(x, y, cell.plant.def);
+          t.title = `${cell.plant.def.name}: ${frozenPlant
+              ? "frozen 🧊 — tender crops die outside in winter" : statusLabel(status)}` +
             (chipNote ? "\n" + chipNote.replace(/^ · /, "") : "") +
             (zoneNote ? "\n" + zoneNote.replace(/^ · /, "") : "");
         } else if (nearBarrel(x, y)) {
           t.insertAdjacentHTML("beforeend", `<span class="zone-badge">−1</span>`);
-          t.title = `${state.sun[y][x]} sun · barrel −1💧 · click to plant`;
+          t.title = `${state.sun[y][x]} sun${cell.inside ? " · under glass" : ""} · barrel −1💧 · click to plant`;
         } else {
-          t.title = `${state.sun[y][x]} sun · click to plant`;
+          t.title = `${state.sun[y][x]} sun${cell.inside ? " · under glass — tender crops live here" : ""} · click to plant`;
         }
       }
       t.addEventListener("click", () => onTileClick(x, y));
@@ -1429,6 +1598,7 @@ function renderPacket() {
     if (hearts) bits.push(`♥${hearts}`);
     if (foes) bits.push(`${em("1f6ab")}${foes}`);
     if (d.tall) bits.push(`TALL`);
+    if (d.tender) bits.push(`TENDER`);
     const cardFace = EMOJI_ART[d.id]
       ? `<span class="seed-emoji"><img class="eimg-card" src="assets/emoji/${EMOJI_ART[d.id]}.svg" alt=""></span>`
       : `<span class="seed-emoji">${d.emoji}</span>`;
@@ -1866,8 +2036,12 @@ function shareGridCells() {
           : (s === "dead" ? "🥀" : c.plant.def.emoji));
       }
       // masked barrel poses as a bloom: the tile reads "used," not "empty,"
-      // without telling friends where the discount lived
-      else if (c.barrel) row.push(spoilerSafe ? "🌼" : "🛢️");
+      // without telling friends where the discount lived (a frozen one may
+      // as well say so — it did nothing worth hiding)
+      else if (c.barrel) row.push(spoilerSafe ? "🌼" : (barrelFrozen(x, y) ? "🧊" : "🛢️"));
+      // empty greenhouse tiles read as glass; planted ones show their crop
+      // like anywhere else — the structure itself is public board geometry
+      else if (c.inside) row.push("🪟");
       else row.push(empty);
     }
     rows.push(row);

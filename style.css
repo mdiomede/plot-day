@@ -210,6 +210,8 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 }
 .scene .s-tree svg { inset: -14% -10% -2% -10%; width: 120%; height: 116%; }
 .scene .s-house svg { inset: -8% -4% 0 -4%; width: 108%; height: 108%; }
+/* glass casts barely any shadow — it's a window, not a wall */
+.scene .s-glass svg { filter: drop-shadow(0 2px 2px rgba(58, 45, 25, .16)); }
 
 .tile {
   position: relative;
