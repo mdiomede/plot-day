@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.7.0"; // bump on each deploy so phones can verify updates
+const VERSION = "0.7.1"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1523,9 +1523,15 @@ function renderBoard() {
           let zoneNote = "";
           if (nearBarrel(x, y)) {
             const missed = cell.plant.watered && cell.plant.paid >= cell.plant.def.water;
-            t.insertAdjacentHTML("beforeend", `<span class="zone-badge${missed ? " missed" : ""}">−1</span>`);
+            // a thirsty plant that would drink for free says "free", not "−1":
+            // the barrel discounts the chore, it doesn't do the chore for you
+            // (new players read −1 + free water as "already watered")
+            const free = !cell.plant.watered && waterCost(x, y, cell.plant.def) === 0;
+            t.insertAdjacentHTML("beforeend",
+              `<span class="zone-badge${missed ? " missed" : ""}">${free ? "free" : "−1"}</span>`);
             zoneNote = missed
               ? " · watered at full price! Re-water to use the barrel's −1💧"
+              : free ? " · barrel: watering it is FREE — but it still needs the can"
               : " · barrel −1💧";
           }
           // live worth: real points when watered, projected when not
@@ -1662,6 +1668,15 @@ function renderTools() {
 
 /* ---------- interactions ---------- */
 
+// A dry watering can is information, not a dead button: shake the meter
+// so a failed pour reads as "out of water," never "the game ignored me."
+function waterDenied() {
+  const m = document.querySelector(".water-meter");
+  m.classList.remove("denied");
+  void m.offsetWidth; // restart the animation on rapid retries
+  m.classList.add("denied");
+}
+
 function onTileClick(x, y) {
   if (state.resolved) return;
   if (state.tutorial && !tutTileOk(x, y)) return tutNudge(); // scripted tile only
@@ -1705,7 +1720,7 @@ function onTileClick(x, y) {
       cell.plant.paid = 0;
     } else {
       const cost = waterCost(x, y, cell.plant.def);
-      if (state.waterLeft < cost) return;
+      if (state.waterLeft < cost) return waterDenied();
       cell.plant.watered = true;
       cell.plant.paid = cost;
       state.waterLeft -= cost;
@@ -2385,6 +2400,7 @@ function startTutorialBoard() {
   recomputeSun();
   $("#bot-banner").hidden = true;
   renderAll();
+  scrollTo(0, 0); // the replay link lives in the footer; the lesson starts at the board
 }
 
 function startTutorial(welcome = false) {

@@ -351,7 +351,15 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 .scene .s-tree img { inset: -16% -12% -4% -12%; width: 124%; height: 120%; }
 .scene .s-house img { inset: -10% -8% -2% -8%; width: 116%; height: 112%; }
 
-.tile:not(.obstacle):hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,.18); z-index: 2; }
+/* hover-capable devices only: on touch, :hover sticks after a tap and the
+   lift shadow was REPLACING the status ring (the "my red outline vanished"
+   bug). Rings ride along explicitly so desktop hover never hides truth. */
+@media (hover: hover) {
+  .tile:not(.obstacle):hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0, 0, 0, .18); z-index: 2; }
+  .tile.status-thrive:hover { box-shadow: 0 4px 8px rgba(0, 0, 0, .18), inset 0 0 0 3px var(--thrive); }
+  .tile.status-ok:hover     { box-shadow: 0 4px 8px rgba(0, 0, 0, .18), inset 0 0 0 3px var(--ok); }
+  .tile.status-dead:hover   { box-shadow: 0 4px 8px rgba(0, 0, 0, .18), inset 0 0 0 3px var(--dead); }
+}
 
 /* sun pips */
 .pips {
@@ -620,6 +628,16 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 
 /* water + tools */
 .water-meter { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+/* a failed watering shakes the meter — a dry can must never read as a dead button */
+.water-meter.denied { animation: deny-shake .4s ease; }
+.water-meter.denied .water-label, .water-meter.denied .water-count { color: var(--dead); }
+@keyframes deny-shake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-5px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(3px); }
+}
 .water-label { font-weight: 800; font-size: .9rem; white-space: nowrap; }
 .short-label { display: none; }
 .water-count { display: none; font-weight: 800; }
