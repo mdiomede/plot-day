@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.6.3"; // bump on each deploy so phones can verify updates
+const VERSION = "0.6.4"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1795,6 +1795,9 @@ function showResults() {
     `<div>${em("1f31f")} ${thrive} thriving · ${em("1f605")} ${ok} hanging on · ${em("1f480")} ${dead} lost</div>` +
     (tallyRow2.length ? `<div>${tallyRow2.join(" · ")}</div>` : "");
   $("#replay-btn").hidden = state.dayNum === 0; // replays/practice can't re-replay
+  // practice & replay results offer the way home — finishing a replay was
+  // a dead end (the only exit was knowing the Today button existed)
+  $("#today-return-btn").hidden = state.dayNum !== 0;
   const streakEl = $("#streak-line");
   if (state.dayNum > 0) {
     const led = loadStore().ledger;
@@ -1840,7 +1843,9 @@ function shareGridCells() {
           ? (s === "thrive" ? "🌸" : s === "ok" ? "🌼" : "🥀")
           : (s === "dead" ? "🥀" : c.plant.def.emoji));
       }
-      else if (c.barrel) row.push(spoilerSafe ? empty : "🛢️");
+      // masked barrel poses as a bloom: the tile reads "used," not "empty,"
+      // without telling friends where the discount lived
+      else if (c.barrel) row.push(spoilerSafe ? "🌼" : "🛢️");
       else row.push(empty);
     }
     rows.push(row);
@@ -2069,6 +2074,10 @@ $("#again-btn").addEventListener("click", () => {
 $("#replay-btn").addEventListener("click", () => {
   $("#results-scrim").hidden = true;
   newGame({ daily: true, replay: true });
+});
+$("#today-return-btn").addEventListener("click", () => {
+  $("#results-scrim").hidden = true;
+  newGame({ daily: true }); // restores a locked daily read-only
 });
 
 /* ---------- practice / dev buttons ---------- */
