@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.6.4"; // bump on each deploy so phones can verify updates
+const VERSION = "0.6.5"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1889,125 +1889,6 @@ if (navigator.share) {
       .catch(() => { /* user closed the sheet */ });
   });
 }
-
-/* ---------- garden portrait: watercolor postcard of your real garden ----------
-   The play board stays flat and legible; THIS is where the watercolor lives.
-   Base scene + sprites composited on canvas with multiply blending (the
-   white paper vanishes), living plants placed back-to-front in perspective
-   rows, talls in the back like a real border bed. */
-
-const PORTRAIT_BASE = "assets/Garden Plot.jpg";
-const PORTRAIT_ROWS = [ // back to front; y/scale in scene fractions
-  { y: .47, scale: .42, xs: [.30, .44, .58, .72] },
-  { y: .60, scale: .58, xs: [.20, .39, .58, .77] },
-  { y: .75, scale: .74, xs: [.16, .37, .58, .79] },
-  { y: .93, scale: .95, xs: [.24, .46, .66, .82] },
-];
-
-function loadImg(src) {
-  return new Promise((res, rej) => {
-    const i = new Image();
-    i.onload = () => res(i);
-    i.onerror = () => rej(new Error("missing " + src));
-    i.src = src;
-  });
-}
-
-async function buildPortrait() {
-  const base = await loadImg(PORTRAIT_BASE);
-  const cw = 1100, ch = Math.round(cw * base.height / base.width);
-  const footer = 96;
-  const canvas = $("#portrait-canvas");
-  canvas.width = cw;
-  canvas.height = ch + footer;
-  const ctx = canvas.getContext("2d");
-  ctx.fillStyle = "#f7efdf";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-  ctx.drawImage(base, 0, 0, cw, ch);
-
-  // living plants only — the postcard shows what grew
-  const plants = [];
-  for (let y = 0; y < H; y++)
-    for (let x = 0; x < W; x++) {
-      const p = state.grid[y][x].plant;
-      if (p && plantStatus(x, y) !== "dead") plants.push(p.def);
-    }
-  // composition: talls take the back border; everything else fills the
-  // foreground beds first so the postcard always looks lush up front
-  const talls = plants.filter(d => d.tall);
-  const shorts = plants.filter(d => !d.tall);
-  const rows = PORTRAIT_ROWS.map(r => r.xs.map(sx => ({ x: sx, y: r.y, s: r.scale })));
-  const backSlots = [...rows[0], ...rows[1]];
-  const frontSlots = [...rows[3], ...rows[2], ...rows[1].slice().reverse()];
-  const placed = [];
-  talls.slice(0, backSlots.length).forEach((d, i) => placed.push({ d, slot: backSlots[i] }));
-  const usedBack = new Set(placed.map(p => p.slot));
-  const freeFront = frontSlots.filter(s => !usedBack.has(s));
-  shorts.slice(0, freeFront.length).forEach((d, i) => placed.push({ d, slot: freeFront[i] }));
-  placed.sort((a, b) => a.slot.y - b.slot.y); // paint back-to-front
-
-  const files = [...new Set(placed.map(p => CROP_ART[p.d.id]).filter(Boolean))];
-  const artImgs = {};
-  await Promise.all(files.map(f =>
-    loadImg("assets/" + f).then(im => { artImgs[f] = im; }).catch(() => {})));
-
-  for (const { d, slot } of placed) {
-    const px = slot.x * cw, py = slot.y * ch;
-    const file = CROP_ART[d.id];
-    if (file && artImgs[file]) {
-      const im = artImgs[file];
-      const hgt = ch * 0.30 * slot.s * (d.tall ? 1.55 : 1);
-      const wdt = hgt * im.width / im.height;
-      ctx.save();
-      ctx.globalCompositeOperation = "multiply";
-      ctx.filter = "brightness(1.07) contrast(1.05)";
-      ctx.drawImage(im, px - wdt / 2, py - hgt, wdt, hgt);
-      ctx.restore();
-    } else { // crops without art yet: drawn emoji holds the slot
-      ctx.font = `${Math.round(ch * 0.13 * slot.s)}px serif`;
-      ctx.textAlign = "center";
-      ctx.fillText(d.emoji, px, py - ch * 0.02);
-    }
-  }
-
-  // footer: plot, season, score in the game's own hand
-  try { await document.fonts.load('800 38px "Baloo 2"'); } catch { /* fallback font */ }
-  ctx.fillStyle = "#f7efdf";
-  ctx.fillRect(0, ch, cw, footer);
-  ctx.strokeStyle = "rgba(122,106,82,.35)";
-  ctx.setLineDash([7, 7]);
-  ctx.beginPath(); ctx.moveTo(20, ch + 6); ctx.lineTo(cw - 20, ch + 6); ctx.stroke();
-  ctx.setLineDash([]);
-  ctx.textAlign = "left";
-  ctx.fillStyle = "#3f6b35";
-  ctx.font = '800 38px "Baloo 2", sans-serif';
-  ctx.fillText(`${state.seedLabel} · ${SEASON_META[state.season].label}`, 28, ch + 64);
-  const score = totalScore();
-  ctx.textAlign = "right";
-  ctx.fillStyle = "#b9552f";
-  ctx.fillText(`${score} pts · Skill ${Math.round((100 * score) / state.gold)}`, cw - 28, ch + 64);
-}
-
-$("#portrait-btn").addEventListener("click", async () => {
-  $("#results-scrim").hidden = true;
-  $("#portrait-scrim").hidden = false;
-  try { await buildPortrait(); }
-  catch (e) {
-    const ctx = $("#portrait-canvas").getContext("2d");
-    ctx.font = "20px sans-serif";
-    ctx.fillText("Portrait assets missing: " + e.message, 20, 40);
-  }
-});
-$("#portrait-close").addEventListener("click", () => {
-  $("#portrait-scrim").hidden = true;
-  $("#results-scrim").hidden = false;
-});
-$("#portrait-save").addEventListener("click", () => {
-  const a = document.createElement("a");
-  a.download = `${state.seedLabel.replace(/[^\w#]+/g, "-")}.png`;
-  a.href = $("#portrait-canvas").toDataURL("image/png");
-  a.click();
-});
 
 /* ---------- bot garden reveal (post-game post-mortem) ---------- */
 

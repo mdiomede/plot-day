@@ -1094,23 +1094,3 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 .results-card .tool-btn:disabled { opacity: .35; }
 .results-actions { display: flex; flex-direction: column; gap: 8px; }
 
-.portrait-card {
-  background: var(--card);
-  border: 3px solid var(--paper-deep);
-  border-radius: 20px;
-  padding: 16px;
-  max-width: 740px;
-  width: 100%;
-  max-height: 92vh;
-  overflow: auto;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, .35);
-  animation: rise .3s ease;
-}
-#portrait-canvas {
-  width: 100%;
-  height: auto;
-  display: block;
-  border-radius: 12px;
-  margin-bottom: 12px;
-  box-shadow: 0 4px 14px rgba(74, 59, 42, .2);
-}
