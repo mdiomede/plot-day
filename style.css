@@ -1264,6 +1264,14 @@ body.hardmode #tally-chip { display: none !important; } /* the SCORE chip, not t
   margin-top: 8px;
   font-weight: 700;
 }
+/* the bot verdict: its own controlled line under the skill number */
+.skill-hero .skill-sub {
+  display: block;
+  font-size: .82rem;
+  font-weight: 800;
+  margin-top: 3px;
+  color: #e8cf9f;
+}
 .par-score {
   font-weight: 800;
   color: #bfb39b;

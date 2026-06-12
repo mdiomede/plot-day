@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.9"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.10"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -2115,10 +2115,13 @@ function showResults() {
 function refreshGoldUI() {
   const score = totalScore();
   $("#gold-score").textContent = state.gold;
+  // skill is ALWAYS stated plainly (matching the bot IS skill 100 — say so);
+  // the verdict rides a deliberate sub-line so nothing wraps mid-phrase
+  const skill = Math.round((100 * score) / state.gold);
   $("#skill-line").innerHTML =
-    score > state.gold ? `${em("1f3c6")} You beat the bot!` :
-    score === state.gold ? `${em("1f3c5")} Matched the bot's best!` :
-    `Skill ${Math.round((100 * score) / state.gold)}`;
+    score > state.gold ? `Skill ${skill}<span class="skill-sub">${em("1f3c6")} You beat the bot!</span>` :
+    score === state.gold ? `Skill 100<span class="skill-sub">${em("1f3c5")} Matched the bot!</span>` :
+    `Skill ${skill}`;
   const rb = ribbonFor(score, state.gold);
   const ribbonLine = $("#ribbon-line");
   ribbonLine.hidden = !rb;
@@ -2153,8 +2156,9 @@ function shareGridCells() {
       // as well say so — it did nothing worth hiding)
       else if (c.barrel) row.push(spoilerSafe ? "🌼" : (barrelFrozen(x, y) ? "🧊" : "🛢️"));
       // empty greenhouse tiles read as glass; planted ones show their crop
-      // like anywhere else — the structure itself is public board geometry
-      else if (c.inside) row.push("🪟");
+      // like anywhere else — the structure itself is public board geometry.
+      // 💠 not 🪟: the window emoji is Unicode 13, tofu on Windows 10.
+      else if (c.inside) row.push("💠");
       else row.push(empty);
     }
     rows.push(row);
