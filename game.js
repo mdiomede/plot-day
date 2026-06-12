@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.6.0"; // bump on each deploy so phones can verify updates
+const VERSION = "0.6.1"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1605,9 +1605,15 @@ function sfx(name) {
   if (name === "plant") { // seed tucked into soil
     noise(ctx, { t0: t, dur: 0.08, vol: 0.22, filterFreq: 900 });
     tone(ctx, { freq: 130, t0: t, dur: 0.12, vol: 0.24, slideTo: 70 });
-  } else if (name === "water") { // watering-can sprinkle + a droplet
-    noise(ctx, { t0: t, dur: 0.25, vol: 0.13, filterType: "bandpass", filterFreq: 4200, q: 1.2, sweepTo: 2600 });
-    tone(ctx, { freq: 720, t0: t + 0.03, dur: 0.07, vol: 0.05, slideTo: 980 });
+  } else if (name === "water") {
+    // water is droplets, not hiss: a cluster of upward bubble-chirps
+    // (the classic water-drop synthesis) over a faint pour bed
+    noise(ctx, { t0: t, dur: 0.3, vol: 0.05, filterType: "bandpass", filterFreq: 3200, q: 0.7, sweepTo: 2300 });
+    for (let i = 0; i < 7; i++) {
+      const at = t + 0.02 + Math.random() * 0.22;
+      const f = 500 + Math.random() * 900;
+      tone(ctx, { freq: f, t0: at, dur: 0.05 + Math.random() * 0.04, vol: 0.06, slideTo: f * 1.8 });
+    }
   } else if (name === "dig") { // shovel scoop
     noise(ctx, { t0: t, dur: 0.14, vol: 0.2, filterFreq: 1400, sweepTo: 500 });
   } else if (name === "chop") { // axe bite
