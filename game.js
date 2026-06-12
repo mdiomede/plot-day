@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.4.2"; // bump on each deploy so phones can verify updates
+const VERSION = "0.5.0"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1270,7 +1270,11 @@ function renderHeader() {
   const badge = $("#season-badge");
   badge.innerHTML = `${meta.name} ${em(meta.icon)}`;
   badge.className = "season-badge " + meta.cls;
-  $("#day-label").textContent = state.seedLabel;
+  // the date sits beside the plot number — "one puzzle a day" made visible
+  const date = state.dayNum > 0
+    ? ` · ${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+    : "";
+  $("#day-label").textContent = state.seedLabel + date;
   $("#arc-label").innerHTML = `${em("1f31e")} ` + SUN_ARCS[state.sunArc].label;
   boardEl.classList.toggle("winter", state.season === "winter");
 }
@@ -1635,6 +1639,46 @@ $("#finish-btn").addEventListener("click", () => {
   showResults();
 });
 
+/* ---------- ribbons: horticulture-show awards by skill ----------
+   Real garden shows pin ribbons by placing: Best in Show rosette, then
+   blue / red / white, with yellow as honorable mention. Skill (% of
+   Gold) is already in every ledger entry, so the future calendar can
+   award all past days retroactively. */
+
+const RIBBONS = {
+  rosette: { name: "Best in Show", emoji: "🏵️", petal: "#a06cc9", center: "#7e549f", shine: "#cfa9ea", tail: "#dcae3f" },
+  blue:    { name: "Blue Ribbon",  emoji: "🔵", petal: "#3f74d8", center: "#2f5cb4", shine: "#8fb2ef", tail: "#2f5cb4" },
+  red:     { name: "Red Ribbon",   emoji: "🔴", petal: "#d6492f", center: "#b03a24", shine: "#ef9077", tail: "#b03a24" },
+  white:   { name: "White Ribbon", emoji: "⚪", petal: "#f1ecdc", center: "#dcd4bd", shine: "#fffdf6", tail: "#cfc6ac" },
+  yellow:  { name: "Honorable Mention", emoji: "🟡", petal: "#ecc845", center: "#cfa92e", shine: "#f7e294", tail: "#cfa92e" },
+};
+
+function ribbonFor(score, gold) {
+  if (score >= gold) return RIBBONS.rosette; // matched or beat the bot
+  const skill = Math.round((100 * score) / gold);
+  if (skill >= 90) return RIBBONS.blue;
+  if (skill >= 75) return RIBBONS.red;
+  if (skill >= 60) return RIBBONS.white;
+  if (skill >= 45) return RIBBONS.yellow;
+  return null; // the judges walked past
+}
+
+// rosette drawn in the game's own hand: pleated ring, button center, tails
+function ribbonSVG(rb) {
+  let petals = "";
+  for (let i = 0; i < 8; i++) {
+    const a = (i * 45 * Math.PI) / 180;
+    petals += `<circle cx="${(50 + 24 * Math.cos(a)).toFixed(1)}" cy="${(42 + 24 * Math.sin(a)).toFixed(1)}" r="11.5" fill="${rb.petal}"/>`;
+  }
+  return `<svg class="ribbon-svg" viewBox="0 0 100 100">
+    <path d="M37,58 L27,93 L38,87 L45,96 Z" fill="${rb.tail}"/>
+    <path d="M63,58 L73,93 L62,87 L55,96 Z" fill="${rb.tail}"/>
+    ${petals}
+    <circle cx="50" cy="42" r="18" fill="${rb.center}"/>
+    <circle cx="44" cy="36" r="5.5" fill="${rb.shine}"/>
+  </svg>`;
+}
+
 function showResults() {
   const score = totalScore();
   let thrive = 0, ok = 0, dead = 0, hearts = 0;
@@ -1676,6 +1720,10 @@ function refreshGoldUI() {
     score > state.gold ? `${em("1f3c6")} You beat the bot!` :
     score === state.gold ? `${em("1f3c5")} Matched the bot's best!` :
     `Skill ${Math.round((100 * score) / state.gold)}`;
+  const rb = ribbonFor(score, state.gold);
+  const ribbonLine = $("#ribbon-line");
+  ribbonLine.hidden = !rb;
+  if (rb) ribbonLine.innerHTML = ribbonSVG(rb) + `<span class="ribbon-name">${rb.name}</span>`;
   $("#bot-btn").disabled = !state.goldLayout;
   state.lastShare = buildShareText(score); // raw text for the clipboard
   $("#share-head").textContent = state.lastShare.split("\n").slice(0, 3).join("\n");
@@ -1719,7 +1767,9 @@ function buildShareText(score) {
   const date = state.dayNum > 0
     ? ` · ${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
     : "";
-  return `${state.seedLabel} · ${meta.label}${date}\n🏆 ${score} pts · ${skill}\nGold ${state.gold} · Par ${state.par}\n${grid}\n`;
+  const rb = ribbonFor(score, state.gold);
+  const ribbonLine = rb ? `${rb.emoji} ${rb.name}\n` : "";
+  return `${state.seedLabel} · ${meta.label}${date}\n🏆 ${score} pts · ${skill}\n${ribbonLine}Gold ${state.gold} · Par ${state.par}\n${grid}\n`;
 }
 
 $("#copy-btn").addEventListener("click", async () => {
@@ -1729,6 +1779,17 @@ $("#copy-btn").addEventListener("click", async () => {
     setTimeout(() => ($("#copy-btn").textContent = "📋 Copy result"), 1500);
   } catch { /* clipboard blocked on file:// in some browsers; text is selectable */ }
 });
+
+// the system share sheet where it exists (phones, mostly); Copy demotes
+// to the secondary spot. Elsewhere Copy stays the primary verb.
+if (navigator.share) {
+  $("#share-btn").hidden = false;
+  $("#copy-btn").classList.replace("finish-btn", "tool-btn");
+  $("#share-btn").addEventListener("click", () => {
+    navigator.share({ text: state.lastShare || buildShareText(totalScore()) })
+      .catch(() => { /* user closed the sheet */ });
+  });
+}
 
 /* ---------- garden portrait: watercolor postcard of your real garden ----------
    The play board stays flat and legible; THIS is where the watercolor lives.

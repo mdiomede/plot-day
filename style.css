@@ -933,6 +933,33 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   100% { transform: scale(1); }
 }
 
+/* ---------- ribbons (horticulture-show awards on the results card) ---------- */
+.ribbon-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px 0 8px;
+}
+.ribbon-line[hidden] { display: none; }
+.ribbon-svg {
+  width: 46px;
+  height: 46px;
+  filter: drop-shadow(0 2px 3px rgba(0, 0, 0, .35));
+  animation: ribbonPin .45s cubic-bezier(.2, 1.6, .4, 1);
+}
+@keyframes ribbonPin {
+  0% { transform: scale(.2) rotate(-18deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.ribbon-name {
+  font-family: "Baloo 2", cursive;
+  font-weight: 800;
+  font-size: 1.2rem;
+  color: #ffe9b8;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, .3);
+}
+
 /* ---------- results ---------- */
 .results-scrim[hidden] { display: none; }
 .results-scrim {
