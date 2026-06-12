@@ -39,7 +39,10 @@
       <button class="phase-btn" data-view="pm"   title="Afternoon sun (from the west)"><img class="em" src="assets/emoji/1f307.svg" alt=""><small>afternoon</small></button>
       <button class="phase-btn is-active" data-view="day" title="Total sun hours"><img class="em" src="assets/emoji/1f552.svg" alt=""><small>all day</small></button>
     </div>
-    <p class="arc-label" id="arc-label"></p>
+    <div class="board-meta">
+      <p class="arc-label" id="arc-label"></p>
+      <span class="tally-chip" id="tally-chip" hidden></span>
+    </div>
     <div id="board" class="board" data-view="day"></div>
   </section>
 
@@ -124,6 +127,7 @@
 <!-- ============ RESULTS ============ -->
 <div class="results-scrim" id="results-scrim" hidden>
   <div class="results-card">
+    <button id="results-x" class="results-x" type="button" title="Back to the garden">✕</button>
     <h2 id="results-title">Day's end <img class="em" src="assets/emoji/1f319.svg" alt=""></h2>
     <div class="score-line">
       <div class="big-score">
@@ -147,7 +151,6 @@
       <button id="share-btn" class="finish-btn" hidden><img class="em" src="assets/emoji/1f331.svg" alt=""> Share result</button>
       <button id="copy-btn" class="finish-btn"><img class="em" src="assets/emoji/1f4cb.svg" alt=""> Copy result</button>
       <button id="bot-btn" class="tool-btn" disabled><img class="em" src="assets/emoji/1f916.svg" alt=""> See the bot's garden</button>
-      <button id="back-btn" class="tool-btn"><img class="em" src="assets/emoji/1f440.svg" alt=""> Look at garden</button>
       <button id="replay-btn" class="tool-btn" hidden><img class="em" src="assets/emoji/1f501.svg" alt=""> Replay this board (practice)</button>
       <button id="today-return-btn" class="tool-btn" hidden><img class="em" src="assets/emoji/1f4c5.svg" alt=""> Back to today's plot</button>
       <button id="again-btn" class="tool-btn"><img class="em" src="assets/emoji/1f3b2.svg" alt=""> Another plot</button>

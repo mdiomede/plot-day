@@ -512,6 +512,33 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 }
 
 .board-hint { color: var(--ink-soft); font-size: .85rem; text-align: center; margin: 10px 4px 0; }
+/* sun line + running tally: two shoulders of one row (centered text and
+   a right chip collide at phone width). Chip goes ghost while thirsty. */
+.board-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 0 2px 8px;
+}
+.board-meta .arc-label { text-align: left; margin: 0; }
+.tally-chip {
+  flex: 0 0 auto;
+  font-size: .78rem;
+  font-weight: 800;
+  color: #fff;
+  background: rgba(58, 45, 25, .8);
+  border: 1.5px solid transparent;
+  border-radius: 999px;
+  padding: 2px 9px;
+}
+.tally-chip .em { width: .82rem; height: .82rem; }
+.tally-chip.ghost {
+  background: rgba(255, 255, 255, .65);
+  color: var(--ink);
+  border: 1.5px dashed var(--ink-soft);
+}
+.tally-chip[hidden] { display: none; }
 .arc-label {
   text-align: center;
   margin: 0 0 8px;
@@ -1011,8 +1038,29 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   white-space: pre-line; /* labels carry their own line breaks so paired buttons match */
   line-height: 1.25;
 }
+/* the conventional exit, top corner; "Look at garden" retired in its favor */
+.results-x {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid rgba(255, 240, 210, .25);
+  background: rgba(255, 244, 222, .08);
+  color: #efe6d2;
+  font-size: 1rem;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.results-x:hover { border-color: rgba(255, 240, 210, .6); }
+
 /* day's end: the card sinks into dusk */
 .results-card {
+  position: relative;
   background:
     radial-gradient(110% 60% at 85% -8%, rgba(255, 226, 158, .14) 0%, transparent 55%),
     linear-gradient(180deg, #2c3150 0%, #3a3a58 52%, #5e4450 86%, #6e4a48 100%);

@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.6.5"; // bump on each deploy so phones can verify updates
+const VERSION = "0.6.6"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -149,7 +149,9 @@ const CATALOG = {
 // Daily sun arc: how high the sun rides. Lower arc = longer shadows,
 // and short things (trees, fences, tall crops) start casting midday shade.
 const SUN_ARCS = {
-  high: { label: "high sun · short shadows", ampm: h => h,     noon: h => Math.max(h - 2, 0) },
+  // "short MIDDAY shadows": am/pm reach is identical to mid arc; high
+  // sun only shrinks noon (user caught the old label overpromising)
+  high: { label: "high sun · short midday shadows", ampm: h => h, noon: h => Math.max(h - 2, 0) },
   mid:  { label: "medium sun",               ampm: h => h,     noon: h => Math.max(h - 1, 0) },
   low:  { label: "low sun · long shadows",   ampm: h => h + 1, noon: h => h },
 };
@@ -1377,6 +1379,26 @@ function renderBoard() {
       boardEl.appendChild(t);
     }
   boardEl.insertAdjacentHTML("beforeend", renderScene());
+  updateTally();
+}
+
+// Running total on the board's shoulder. Speaks the badges' language:
+// ghost (dashed) while anything is thirsty = "as planned, if watered";
+// solid once every plant has its drink (or the day is done).
+function updateTally() {
+  const chip = $("#tally-chip");
+  let sum = 0, plants = 0, thirsty = 0;
+  for (let y = 0; y < H; y++)
+    for (let x = 0; x < W; x++) {
+      const p = state.grid[y][x].plant;
+      if (!p) continue;
+      plants++;
+      if (!p.watered) thirsty++;
+      sum += state.resolved ? plantPoints(x, y) : pointsPreview(x, y);
+    }
+  chip.hidden = plants === 0;
+  chip.classList.toggle("ghost", !state.resolved && thirsty > 0);
+  chip.innerHTML = `${em("1f3c6")} ${sum}`;
 }
 
 function statusLabel(s) {
@@ -1947,7 +1969,7 @@ function exitBotView() {
 $("#bot-btn").addEventListener("click", enterBotView);
 $("#bot-banner").addEventListener("click", exitBotView);
 
-$("#back-btn").addEventListener("click", () => { $("#results-scrim").hidden = true; });
+$("#results-x").addEventListener("click", () => { $("#results-scrim").hidden = true; });
 $("#again-btn").addEventListener("click", () => {
   $("#results-scrim").hidden = true;
   newGame({ daily: false });
