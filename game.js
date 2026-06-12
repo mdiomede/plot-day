@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.5"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.6"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -2057,6 +2057,7 @@ function showResults() {
     streakEl.hidden = false;
   } else streakEl.hidden = true;
   $("#results-scrim").hidden = false;
+  document.querySelector(".results-card").scrollTop = 0; // always open on the score
 }
 
 function refreshGoldUI() {
@@ -2376,6 +2377,7 @@ $("#cabinet-btn").addEventListener("click", () => {
   renderCalendar();
   $("#cal-detail").hidden = true;
   $("#cabinet-scrim").hidden = false;
+  document.querySelector(".cabinet-card").scrollTop = 0; // same staleness as results
 });
 $("#cabinet-x").addEventListener("click", () => { $("#cabinet-scrim").hidden = true; });
 $("#cal-prev").addEventListener("click", () => calShift(-1));
