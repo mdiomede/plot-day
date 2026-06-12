@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.11"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.12"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1066,19 +1066,34 @@ const SVG_HUT = `
   <rect x="39" y="62" width="7" height="30" rx="3" fill="#aa7c50"/>
 </svg>`;
 
-function svgGarage(horizontal) {
+function svgGarage(horizontal, away = false) {
   const vb = horizontal ? "0 0 200 100" : "0 0 100 200";
+  // doors-away (house to the south): draw the garage's BACK — clapboard
+  // wall, high windows, a bush — instead of scaleY-flipping the whole
+  // drawing, which hung the ground shadow in the sky
+  const face = away
+    ? `<path d="M16 60 H184 M16 72 H184" stroke="#dfc9a1" stroke-width="2.5" stroke-linecap="round"/>
+       <rect x="46" y="46" width="26" height="15" rx="3" fill="#cfe7f0"/>
+       <rect x="46" y="46" width="26" height="5" fill="#a6cdd9"/>
+       <rect x="44" y="61" width="30" height="4" rx="2" fill="#d9c49b"/>
+       <rect x="128" y="46" width="26" height="15" rx="3" fill="#cfe7f0"/>
+       <rect x="128" y="46" width="26" height="5" fill="#a6cdd9"/>
+       <rect x="126" y="61" width="30" height="4" rx="2" fill="#d9c49b"/>
+       <circle cx="23" cy="85" r="9" fill="#69a258"/>
+       <circle cx="32" cy="88" r="7" fill="#5b9350"/>
+       <circle cx="177" cy="87" r="8" fill="#5b9350"/>`
+    : `<rect x="24" y="48" width="66" height="40" rx="4" fill="#9aa6b0"/>
+       <rect x="24" y="48" width="66" height="8" rx="4" fill="#828f9a"/>
+       <rect x="110" y="48" width="66" height="40" rx="4" fill="#9aa6b0"/>
+       <rect x="110" y="48" width="66" height="8" rx="4" fill="#828f9a"/>
+       <path d="M30 64h54M30 74h54M116 64h54M116 74h54" stroke="#8794a0" stroke-width="3" stroke-linecap="round"/>`;
   const body = horizontal
     ? `<ellipse cx="100" cy="94" rx="92" ry="5" fill="rgba(46,62,33,.2)"/>
        <rect x="8" y="36" width="184" height="56" rx="6" fill="#ecdab6"/>
        <rect x="8" y="36" width="184" height="9" fill="#d6c096"/>
        <rect x="2" y="22" width="196" height="17" rx="7" fill="#bb8d60"/>
        <rect x="2" y="22" width="196" height="6" rx="3" fill="#d2a878"/>
-       <rect x="24" y="48" width="66" height="40" rx="4" fill="#9aa6b0"/>
-       <rect x="24" y="48" width="66" height="8" rx="4" fill="#828f9a"/>
-       <rect x="110" y="48" width="66" height="40" rx="4" fill="#9aa6b0"/>
-       <rect x="110" y="48" width="66" height="8" rx="4" fill="#828f9a"/>
-       <path d="M30 64h54M30 74h54M116 64h54M116 74h54" stroke="#8794a0" stroke-width="3" stroke-linecap="round"/>`
+       ${face}`
     : `<ellipse cx="50" cy="192" rx="42" ry="5" fill="rgba(46,62,33,.2)"/>
        <rect x="36" y="8" width="56" height="184" rx="6" fill="#ecdab6"/>
        <rect x="36" y="8" width="9" height="184" fill="#d6c096"/>
@@ -1405,12 +1420,12 @@ function renderScene() {
     const [[x1, y1], [x2, y2]] = garages;
     const horiz = y1 === y2;
     const gx = Math.min(x1, x2), gy = Math.min(y1, y2);
-    let cls = "";
-    if (core) {
-      if (horiz && core[1] > gy) cls = "gflipy";  // house below: doors point up/out
-      if (!horiz && core[0] > gx) cls = "gflipx"; // house right: doors point left/out
-    }
-    parts.push(at(gx, gy, horiz ? 2 : 1, horiz ? 1 : 2, svgGarage(horiz), cls));
+    // house below a horizontal garage: doors open north, so we see the
+    // building's BACK (drawn properly — a scaleY flip hung the shadow in
+    // the sky). Sideways mirroring reads fine, so vertical keeps the flip.
+    const away = !!(core && horiz && core[1] > gy);
+    const cls = core && !horiz && core[0] > gx ? "gflipx" : "";
+    parts.push(at(gx, gy, horiz ? 2 : 1, horiz ? 1 : 2, svgGarage(horiz, away), cls));
   } else for (const [x, y] of garages) parts.push(at(x, y, 1, 1, svgGarage(true)));
 
   // the glasshouse spans its interior tiles (winter boards only); painted

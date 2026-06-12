@@ -337,7 +337,7 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 .crop-art.tall-art.flip { transform: translateX(-50%) scaleX(-1); }
 .scene .structure.flip img { transform: scaleX(-1); }
 .scene .structure.gflipx svg { transform: scaleX(-1); }
-.scene .structure.gflipy svg { transform: scaleY(-1); }
+/* gflipy retired: the doors-away garage is now drawn as a proper back view */
 
 .scene .structure img {
   position: absolute;
