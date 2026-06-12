@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.12"; // bump on each deploy so phones can verify updates
+const VERSION = "0.9.0"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1035,39 +1035,103 @@ function solveGold(board, seed, iterations, wantLayout = false) {
 
 /* ---------- illustrated scene (SVG structures over the grid) ---------- */
 
-const SVG_HOUSE = `
-<svg viewBox="0 0 100 100" overflow="visible">
-  <ellipse cx="50" cy="94" rx="43" ry="5" fill="rgba(46,62,33,.22)"/>
-  <rect x="12" y="42" width="76" height="51" rx="4" fill="#f2e2c2"/>
-  <rect x="12" y="42" width="76" height="9" fill="#dcc69e"/>
-  <rect x="80" y="42" width="8" height="51" fill="#e2cfa9"/>
-  <polygon points="4,46 50,10 96,46" fill="#c96a4b"/>
-  <polygon points="50,10 96,46 76,46 50,21" fill="#a84e33"/>
-  <polygon points="4,46 50,10 58,16 14,46" fill="#dd8059"/>
-  <rect x="64" y="19" width="11" height="16" fill="#b25a3c"/>
-  <rect x="64" y="19" width="11" height="4.5" fill="#8e442a"/>
-  <rect x="57" y="60" width="18" height="33" rx="3" fill="#96683f"/>
-  <rect x="57" y="60" width="6" height="33" rx="3" fill="#aa7c50"/>
-  <circle cx="71" cy="77" r="1.7" fill="#54381e"/>
-  <rect x="23" y="57" width="20" height="16" rx="2" fill="#cfe7f0"/>
-  <rect x="23" y="57" width="20" height="5" fill="#a6cdd9"/>
-  <rect x="21" y="72" width="24" height="4" rx="2" fill="#d9c49b"/>
-</svg>`;
+/* Cottage dressing: palette, mirroring, dormer, porch — seeded from the
+   board itself so every player's daily wears the same outfit, and stable
+   for the whole board (keyed on baseObstacles: pruning must not repaint
+   the house). Winter adds snow on every roof and smoke from the chimney. */
+function houseDecor() {
+  const key = state.seedLabel + "|" +
+    (state.baseObstacles || []).map(r => r.map(o => o ? o[0] : ".").join("")).join("");
+  const h = hashStr(key);
+  const ROOFS = [
+    ["#c96a4b", "#a84e33", "#dd8059"], // terracotta (the original)
+    ["#7189a3", "#59718c", "#90a6bd"], // slate blue
+    ["#92a35b", "#75864a", "#aab873"], // moss green
+  ];
+  const WALLS = [
+    ["#f2e2c2", "#dcc69e", "#e2cfa9"], // cream (the original)
+    ["#e8ead2", "#cfd3b2", "#dadec0"], // pale sage
+    ["#e4ebef", "#c9d6dd", "#d6e0e6"], // morning sky
+  ];
+  return {
+    roof: ROOFS[h % 3],
+    wall: WALLS[(h >>> 2) % 3],
+    mirror: !!((h >>> 4) & 1),
+    dormer: ((h >>> 5) & 3) === 0, // one cottage in four
+    porch: ((h >>> 7) & 3) === 0,
+    winter: state.season === "winter",
+  };
+}
 
-const SVG_HUT = `
-<svg viewBox="0 0 100 100" overflow="visible">
-  <ellipse cx="50" cy="93" rx="36" ry="4.5" fill="rgba(46,62,33,.22)"/>
-  <rect x="16" y="48" width="68" height="44" rx="4" fill="#f2e2c2"/>
-  <rect x="16" y="48" width="68" height="8" fill="#dcc69e"/>
-  <polygon points="10,52 50,20 90,52" fill="#c96a4b"/>
-  <polygon points="50,20 90,52 74,52 50,30" fill="#a84e33"/>
-  <polygon points="10,52 50,20 57,25 17,52" fill="#dd8059"/>
-  <rect x="39" y="62" width="22" height="30" rx="3" fill="#96683f"/>
-  <rect x="39" y="62" width="7" height="30" rx="3" fill="#aa7c50"/>
-</svg>`;
+function svgHouse(d) {
+  const [r0, r1, r2] = d.roof, [w0, w1, w2] = d.wall;
+  const roofSnow = d.winter
+    ? `<path d="M7,45 L50,11.5 L93,45" stroke="#eef4f5" stroke-width="6" fill="none" stroke-linecap="round"/>`
+    : "";
+  const chimSnow = d.winter
+    ? `<rect x="62.5" y="16.5" width="14" height="5" rx="2.5" fill="#f6fafa"/>`
+    : "";
+  const smoke = d.winter ? `
+    <g class="chimney-smoke">
+      <circle cx="72" cy="11" r="2.6" fill="#e8eef0" opacity=".75"/>
+      <circle cx="76.5" cy="5" r="3.6" fill="#eef3f4" opacity=".55"/>
+      <circle cx="82" cy="-2" r="4.6" fill="#f3f7f7" opacity=".35"/>
+    </g>` : "";
+  const dormer = d.dormer ? `
+    <polygon points="20,28 30,18.5 40,28" fill="${r1}"/>
+    <rect x="24" y="28" width="12" height="10" rx="1.5" fill="${w0}"/>
+    <rect x="26" y="30" width="8" height="6" rx="1" fill="#cfe7f0"/>` : "";
+  const porch = d.porch ? `
+    <rect x="52" y="55" width="28" height="6" rx="3" fill="${r2}"/>
+    <rect x="52.5" y="59" width="3.5" height="34" rx="1.5" fill="#96683f"/>
+    <rect x="76" y="59" width="3.5" height="34" rx="1.5" fill="#96683f"/>` : "";
+  const body = `
+    <rect x="12" y="42" width="76" height="51" rx="4" fill="${w0}"/>
+    <rect x="12" y="42" width="76" height="9" fill="${w1}"/>
+    <rect x="80" y="42" width="8" height="51" fill="${w2}"/>
+    <polygon points="4,46 50,10 96,46" fill="${r0}"/>
+    <polygon points="50,10 96,46 76,46 50,21" fill="${r1}"/>
+    <polygon points="4,46 50,10 58,16 14,46" fill="${r2}"/>
+    ${roofSnow}
+    <rect x="64" y="19" width="11" height="16" fill="#b25a3c"/>
+    <rect x="64" y="19" width="11" height="4.5" fill="#8e442a"/>
+    ${chimSnow}${smoke}${dormer}
+    <rect x="57" y="60" width="18" height="33" rx="3" fill="#96683f"/>
+    <rect x="57" y="60" width="6" height="33" rx="3" fill="#aa7c50"/>
+    <circle cx="71" cy="77" r="1.7" fill="#54381e"/>
+    ${porch}
+    <rect x="23" y="57" width="20" height="16" rx="2" fill="#cfe7f0"/>
+    <rect x="23" y="57" width="20" height="5" fill="#a6cdd9"/>
+    <rect x="21" y="72" width="24" height="4" rx="2" fill="#d9c49b"/>`;
+  return `<svg viewBox="0 0 100 100" overflow="visible">
+    <ellipse cx="50" cy="94" rx="43" ry="5" fill="rgba(46,62,33,.22)"/>
+    ${d.mirror ? `<g transform="translate(100,0) scale(-1,1)">${body}</g>` : body}
+  </svg>`;
+}
 
-function svgGarage(horizontal, away = false) {
+function svgHut(d) {
+  const [r0, r1, r2] = d.roof, [w0, w1] = d.wall;
+  const snow = d.winter
+    ? `<path d="M13,51 L50,21.5 L87,51" stroke="#eef4f5" stroke-width="5.5" fill="none" stroke-linecap="round"/>`
+    : "";
+  return `<svg viewBox="0 0 100 100" overflow="visible">
+    <ellipse cx="50" cy="93" rx="36" ry="4.5" fill="rgba(46,62,33,.22)"/>
+    <rect x="16" y="48" width="68" height="44" rx="4" fill="${w0}"/>
+    <rect x="16" y="48" width="68" height="8" fill="${w1}"/>
+    <polygon points="10,52 50,20 90,52" fill="${r0}"/>
+    <polygon points="50,20 90,52 74,52 50,30" fill="${r1}"/>
+    <polygon points="10,52 50,20 57,25 17,52" fill="${r2}"/>
+    ${snow}
+    <rect x="39" y="62" width="22" height="30" rx="3" fill="#96683f"/>
+    <rect x="39" y="62" width="7" height="30" rx="3" fill="#aa7c50"/>
+  </svg>`;
+}
+
+function svgGarage(horizontal, away = false, winter = false) {
   const vb = horizontal ? "0 0 200 100" : "0 0 100 200";
+  const snow = !winter ? "" : horizontal
+    ? `<rect x="2" y="18" width="196" height="6.5" rx="3" fill="#eef4f5"/>`
+    : `<rect x="18" y="2" width="6.5" height="196" rx="3" fill="#eef4f5"/>`;
   // doors-away (house to the south): draw the garage's BACK — clapboard
   // wall, high windows, a bush — instead of scaleY-flipping the whole
   // drawing, which hung the ground shadow in the sky
@@ -1093,12 +1157,13 @@ function svgGarage(horizontal, away = false) {
        <rect x="8" y="36" width="184" height="9" fill="#d6c096"/>
        <rect x="2" y="22" width="196" height="17" rx="7" fill="#bb8d60"/>
        <rect x="2" y="22" width="196" height="6" rx="3" fill="#d2a878"/>
-       ${face}`
+       ${snow}${face}`
     : `<ellipse cx="50" cy="192" rx="42" ry="5" fill="rgba(46,62,33,.2)"/>
        <rect x="36" y="8" width="56" height="184" rx="6" fill="#ecdab6"/>
        <rect x="36" y="8" width="9" height="184" fill="#d6c096"/>
        <rect x="22" y="2" width="17" height="196" rx="7" fill="#bb8d60"/>
        <rect x="22" y="2" width="6" height="196" rx="3" fill="#d2a878"/>
+       ${snow}
        <rect x="48" y="24" width="40" height="66" rx="4" fill="#9aa6b0"/>
        <rect x="48" y="24" width="8" height="66" rx="4" fill="#828f9a"/>
        <rect x="48" y="110" width="40" height="66" rx="4" fill="#9aa6b0"/>
@@ -1402,16 +1467,17 @@ function renderScene() {
     }
 
   // the 2x2 core renders as one cottage; leftover house cells become huts
+  const dec = houseDecor(); // seeded per board: palette, mirror, dormer, porch
   const isHouse = (x, y) => houses.some(([hx, hy]) => hx === x && hy === y);
   let core = null;
   for (const [x, y] of houses)
     if (!core && isHouse(x + 1, y) && isHouse(x, y + 1) && isHouse(x + 1, y + 1)) core = [x, y];
   if (core) parts.push(!winter && BOARD_ART
     ? at(core[0], core[1], 2, 2, `<img src="assets/Cottage.jpg" alt="cottage">`, "s-house art")
-    : at(core[0], core[1], 2, 2, SVG_HOUSE, "s-house"));
+    : at(core[0], core[1], 2, 2, svgHouse(dec), "s-house"));
   for (const [x, y] of houses) {
     const inCore = core && x >= core[0] && x <= core[0] + 1 && y >= core[1] && y <= core[1] + 1;
-    if (!inCore) parts.push(at(x, y, 1, 1, SVG_HUT));
+    if (!inCore) parts.push(at(x, y, 1, 1, svgHut(dec)));
   }
 
   // garages come as an adjacent pair; span them with one annex whose
@@ -1425,8 +1491,8 @@ function renderScene() {
     // the sky). Sideways mirroring reads fine, so vertical keeps the flip.
     const away = !!(core && horiz && core[1] > gy);
     const cls = core && !horiz && core[0] > gx ? "gflipx" : "";
-    parts.push(at(gx, gy, horiz ? 2 : 1, horiz ? 1 : 2, svgGarage(horiz, away), cls));
-  } else for (const [x, y] of garages) parts.push(at(x, y, 1, 1, svgGarage(true)));
+    parts.push(at(gx, gy, horiz ? 2 : 1, horiz ? 1 : 2, svgGarage(horiz, away, winter), cls));
+  } else for (const [x, y] of garages) parts.push(at(x, y, 1, 1, svgGarage(true, false, winter)));
 
   // the glasshouse spans its interior tiles (winter boards only); painted
   // last so its panes wash over whatever grows beneath them
