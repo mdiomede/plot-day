@@ -1064,6 +1064,130 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   line-height: 1.25;
 }
 /* the conventional exit, top corner; "Look at garden" retired in its favor */
+/* ---------- trophy cabinet & calendar (paper, not dusk: it's a noon visit) ---------- */
+.cabinet-card {
+  position: relative;
+  background: var(--card);
+  border: 2px solid var(--paper-deep);
+  border-radius: 18px;
+  padding: 16px 16px 14px;
+  width: min(430px, 100%);
+  max-height: min(92vh, 720px);
+  overflow-y: auto;
+  box-shadow: 0 14px 36px rgba(74, 59, 42, .35);
+}
+.cabinet-card h2 {
+  margin: 0 0 10px;
+  font-family: "Baloo 2", sans-serif;
+  color: var(--leaf-deep);
+  font-size: 1.3rem;
+}
+.cabinet-card h2 .em { width: 1.1rem; height: 1.1rem; vertical-align: -.12rem; }
+.cabinet-card .results-x {
+  border-color: var(--paper-deep);
+  background: var(--paper);
+  color: var(--ink-soft);
+}
+.cabinet-card .results-x:hover { border-color: var(--terracotta); }
+.cabinet-shelf {
+  display: flex;
+  justify-content: space-between;
+  gap: 4px;
+  background: var(--paper);
+  border: 2px solid var(--paper-deep);
+  border-radius: 12px;
+  padding: 8px 10px;
+  margin-bottom: 8px;
+}
+.shelf-slot { display: flex; align-items: center; gap: 3px; font-weight: 800; font-size: .78rem; color: var(--ink); }
+.shelf-slot .ribbon-svg { width: 26px; height: 26px; animation: none; filter: none; }
+.shelf-slot.none { opacity: .3; }
+.cabinet-stats { font-size: .8rem; font-weight: 700; color: var(--ink-soft); margin-bottom: 12px; line-height: 1.55; }
+.cabinet-stats .em { width: .85rem; height: .85rem; vertical-align: -.12rem; }
+.cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 4px; }
+.cal-title { font-family: "Baloo 2", sans-serif; font-weight: 700; color: var(--ink); }
+.cal-nav {
+  width: 30px; height: 30px;
+  border-radius: 8px;
+  border: 2px solid var(--paper-deep);
+  background: var(--paper);
+  font-weight: 800;
+  color: var(--ink);
+  cursor: pointer;
+}
+.cal-nav:disabled { opacity: .3; cursor: default; }
+.cal-dow {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+  font-size: .6rem; font-weight: 800; color: var(--ink-soft);
+  text-align: center;
+  margin-bottom: 3px;
+}
+.cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.cal-cell {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 9px;
+  border: 1.5px solid var(--paper-deep);
+  background: var(--paper);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  padding: 0;
+  font-family: "Nunito", sans-serif;
+}
+.cal-cell.pad { visibility: hidden; }
+.cal-cell.off { opacity: .3; cursor: default; }
+.cal-cell.missed { background: transparent; }
+.cal-cell.today { border: 2px solid var(--terracotta); }
+.cal-cell i {
+  position: absolute; top: 2px; left: 4px;
+  font-style: normal; font-size: .55rem; font-weight: 800;
+  color: var(--ink-soft);
+}
+.cal-cell .ribbon-svg { width: 56%; height: 56%; margin-top: 5px; animation: none; filter: drop-shadow(0 1px 1px rgba(0, 0, 0, .2)); }
+.cal-cell .em { width: 42%; height: 42%; margin-top: 6px; opacity: .75; } /* sprout: played, no ribbon */
+.cal-dot {
+  width: 9px; height: 9px;
+  border-radius: 50%;
+  background: var(--terracotta);
+  margin-top: 6px;
+  animation: dotPulse 1.6s ease-in-out infinite;
+}
+@keyframes dotPulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(.7); opacity: .55; } }
+.cal-detail {
+  background: var(--paper);
+  border: 2px solid var(--paper-deep);
+  border-radius: 12px;
+  padding: 8px 11px;
+  margin-top: 10px;
+  font-size: .78rem;
+  font-weight: 700;
+  color: var(--ink);
+  line-height: 1.6;
+}
+.cal-detail[hidden] { display: none; }
+.cal-detail .em { width: .85rem; height: .85rem; vertical-align: -.12rem; }
+.cal-detail-ribbon { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+.cal-detail .ribbon-svg { width: 20px; height: 20px; animation: none; filter: none; vertical-align: -5px; }
+.settings-row { border-top: 2px dashed var(--paper-deep); margin-top: 14px; padding-top: 11px; }
+.hard-toggle {
+  display: flex;
+  gap: 9px;
+  align-items: flex-start;
+  font-size: .76rem;
+  font-weight: 600;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  cursor: pointer;
+}
+.hard-toggle input { width: 18px; height: 18px; margin-top: 1px; flex: 0 0 auto; accent-color: var(--terracotta); cursor: pointer; }
+.hard-toggle strong { color: var(--ink); }
+
+/* hard mode: the math disappears, the truth stays (pips, rings, drops) */
+body.hardmode .pts-badge,
+body.hardmode .friend-badge,
+body.hardmode .zone-badge,
+body.hardmode .tally-chip { display: none !important; }
+
 .results-x {
   position: absolute;
   top: 10px;

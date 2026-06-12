@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.7.2"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.0"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -340,6 +340,7 @@ function lockDaily() {
     score, par: state.par, gold: state.gold,
     skill: Math.round((100 * score) / state.gold),
     cells, barrel, pruned: prunedCells, waterLeft: state.waterLeft,
+    hard: store.hardMode ? 1 : 0, // the mode the day was locked under
     at: Date.now(),
   });
   saveStore(store);
@@ -1422,6 +1423,7 @@ const $ = sel => document.querySelector(sel);
 const boardEl = $("#board");
 
 function renderAll() {
+  applyHardMode(); // body class first: badges render under its CSS
   renderHeader();
   renderBoard();
   renderPacket();
@@ -2089,7 +2091,10 @@ function buildShareText(score) {
   // it was just extra text (the results screen keeps the private ladder)
   const rb = ribbonFor(score, state.gold);
   const ribbonLine = rb ? `${rb.emoji} ${rb.name}\n` : "";
-  return `${state.seedLabel} · ${meta.label}${date}\n🏆 ${score} pts · ${skill}\n${ribbonLine}${grid}\n`;
+  // 🎓 marks a score earned without the math badges — a locked daily reads
+  // the mode it was locked under, a practice share reads the live setting
+  const hard = state.dayNum > 0 ? !!(todayEntry() || {}).hard : !!loadStore().hardMode;
+  return `${state.seedLabel} · ${meta.label}${date}\n🏆 ${score} pts · ${skill}${hard ? " · 🎓 hard" : ""}\n${ribbonLine}${grid}\n`;
 }
 
 $("#copy-btn").addEventListener("click", async () => {
@@ -2196,6 +2201,153 @@ $("#random-btn").addEventListener("click", () => {
 $("#today-btn").addEventListener("click", () => {
   if (state.tutorial) return tutNudge();
   newGame({ daily: true });
+});
+
+/* ---------- trophy cabinet: calendar, lifetime stats, first settings ----------
+   Pure UI over the ledger — lockDaily stores raw facts precisely so all
+   of this (ribbons for past days included) is derivable retroactively.
+   The cabinet is also the game's first settings surface (hard mode). */
+
+const plotDate = plot => new Date(EPOCH_Y, EPOCH_M, EPOCH_D + (plot - 1));
+function todayPlot() {
+  const t = new Date();
+  const mid = new Date(t.getFullYear(), t.getMonth(), t.getDate());
+  return Math.round((mid - new Date(EPOCH_Y, EPOCH_M, EPOCH_D)) / 86400000) + 1;
+}
+
+let calCursor = { y: EPOCH_Y, m: EPOCH_M };
+
+// Streaks independent of the board on screen (currentStreak needs a live
+// daily). A not-yet-played today doesn't break the chain — Wordle rules.
+function cabinetStreaks() {
+  const plots = new Set(loadStore().ledger.map(e => e.plot));
+  const tp = todayPlot();
+  let cur = 0, d = plots.has(tp) ? tp : tp - 1;
+  while (d > 0 && plots.has(d)) { cur++; d--; }
+  let best = 0, run = 0;
+  for (let p = 1; p <= tp; p++) { run = plots.has(p) ? run + 1 : 0; best = Math.max(best, run); }
+  return { cur, best };
+}
+
+function renderCabinet() {
+  const led = loadStore().ledger;
+  const counts = {};
+  let beaten = 0, skillSum = 0;
+  for (const k in RIBBONS) counts[k] = 0;
+  for (const e of led) {
+    const rb = ribbonFor(e.score, e.gold);
+    for (const k in RIBBONS) if (rb === RIBBONS[k]) counts[k]++;
+    if (e.score > e.gold) beaten++;
+    skillSum += e.skill;
+  }
+  $("#cabinet-shelf").innerHTML = Object.keys(RIBBONS).map(k =>
+    `<span class="shelf-slot${counts[k] ? "" : " none"}" title="${RIBBONS[k].name}">${ribbonImg(RIBBONS[k])}<b>×${counts[k]}</b></span>`).join("");
+  const stats = $("#cabinet-stats");
+  if (!led.length) {
+    stats.innerHTML = "The shelf is waiting — finish a daily plot and the ribbons start arriving.";
+    return;
+  }
+  const { cur, best } = cabinetStreaks();
+  stats.innerHTML =
+    `<div>${em("1f4da")} ${led.length} ${led.length === 1 ? "plot" : "plots"} grown · ${em("1f525")} ${cur}-day streak${best > cur ? ` (best ${best})` : ""}</div>` +
+    `<div>${em("1f3c5")} average skill ${Math.round(skillSum / led.length)} · ${em("1f916")} bot beaten ${beaten}×</div>`;
+}
+
+function renderCalendar() {
+  const { y, m } = calCursor;
+  $("#cal-title").textContent =
+    new Date(y, m, 1).toLocaleDateString(undefined, { month: "long", year: "numeric" });
+  const now = new Date();
+  $("#cal-prev").disabled = y < EPOCH_Y || (y === EPOCH_Y && m <= EPOCH_M);
+  $("#cal-next").disabled = y > now.getFullYear() ||
+    (y === now.getFullYear() && m >= now.getMonth());
+
+  const byPlot = new Map(loadStore().ledger.map(e => [e.plot, e]));
+  const epoch = new Date(EPOCH_Y, EPOCH_M, EPOCH_D);
+  const tp = todayPlot();
+  const startDow = new Date(y, m, 1).getDay();
+  const daysIn = new Date(y, m + 1, 0).getDate();
+  let html = "";
+  for (let i = 0; i < startDow; i++) html += `<span class="cal-cell pad"></span>`;
+  for (let d = 1; d <= daysIn; d++) {
+    const plot = Math.round((new Date(y, m, d) - epoch) / 86400000) + 1;
+    let cls = "cal-cell", body = `<i>${d}</i>`;
+    if (plot < 1 || plot > tp) cls += " off"; // before Plot #1, or the future
+    else {
+      const e = byPlot.get(plot);
+      if (e) {
+        const rb = ribbonFor(e.score, e.gold);
+        body += rb ? ribbonImg(rb) : em("1f331"); // sub-45 days still grew something
+        cls += " played";
+      } else if (plot === tp) { cls += " open"; body += `<span class="cal-dot"></span>`; }
+      else cls += " missed";
+    }
+    if (plot === tp) cls += " today";
+    html += `<button type="button" class="${cls}" data-plot="${plot}">${body}</button>`;
+  }
+  $("#cal-grid").innerHTML = html;
+  $("#cal-grid").querySelectorAll("button[data-plot]").forEach(b =>
+    b.addEventListener("click", () => showCalDetail(+b.dataset.plot)));
+}
+
+function showCalDetail(plot) {
+  const box = $("#cal-detail");
+  const tp = todayPlot();
+  if (plot < 1 || plot > tp) { box.hidden = true; return; }
+  const dateTxt = plotDate(plot).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const e = loadStore().ledger.find(x => x.plot === plot);
+  if (!e) {
+    box.innerHTML = plot === tp
+      ? `<b>Plot #${plot} · ${dateTxt}</b> — today's plot is still waiting for its gardener.`
+      : `<b>Plot #${plot} · ${dateTxt}</b> — no garden grown this day.`;
+  } else {
+    const meta = SEASON_META[e.season];
+    const rb = ribbonFor(e.score, e.gold);
+    box.innerHTML =
+      `<b>Plot #${e.plot} · ${dateTxt} · ${meta.name} ${em(meta.icon)}</b><br>` +
+      `${em("1f3c6")} ${e.score} pts · skill ${e.skill}${e.hard ? " · 🎓 hard" : ""} · Par ${e.par} · Gold ${e.gold}` +
+      (rb ? `<span class="cal-detail-ribbon">${ribbonImg(rb)}<b>${rb.name}</b></span>` : "");
+  }
+  box.hidden = false;
+}
+
+function calShift(delta) {
+  let { y, m } = calCursor;
+  m += delta;
+  if (m < 0) { m = 11; y--; }
+  if (m > 11) { m = 0; y++; }
+  calCursor = { y, m };
+  $("#cal-detail").hidden = true;
+  renderCalendar();
+}
+
+$("#cabinet-btn").addEventListener("click", () => {
+  if (state.tutorial) return tutNudge();
+  const now = new Date();
+  calCursor = { y: now.getFullYear(), m: now.getMonth() };
+  $("#hardmode-toggle").checked = !!loadStore().hardMode;
+  renderCabinet();
+  renderCalendar();
+  $("#cal-detail").hidden = true;
+  $("#cabinet-scrim").hidden = false;
+});
+$("#cabinet-x").addEventListener("click", () => { $("#cabinet-scrim").hidden = true; });
+$("#cal-prev").addEventListener("click", () => calShift(-1));
+$("#cal-next").addEventListener("click", () => calShift(1));
+
+/* hard mode: hide the math badges (points, hearts, −1, running tally);
+   pips and status rings are board truth and always stay. The tutorial
+   always renders fully instrumented — its lessons point at the badges. */
+function applyHardMode() {
+  const on = !!loadStore().hardMode && !state.tutorial && !state.isTutorialBoard;
+  document.body.classList.toggle("hardmode", on);
+}
+
+$("#hardmode-toggle").addEventListener("change", ev => {
+  const s = loadStore();
+  s.hardMode = ev.target.checked;
+  saveStore(s);
+  renderAll();
 });
 
 /* ---------- first-visit guided tutorial ----------

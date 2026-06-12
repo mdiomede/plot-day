@@ -22,6 +22,7 @@
   </div>
   <div class="day-block">
     <div class="day-row">
+      <button id="cabinet-btn" class="mute-btn" type="button" title="Trophy cabinet & garden calendar"><img class="em" src="assets/emoji/1f3c6.svg" alt="trophies"></button>
       <button id="mute-btn" class="mute-btn" type="button"></button>
       <span id="season-badge" class="season-badge"></span>
     </div>
@@ -154,6 +155,30 @@
       <button id="replay-btn" class="tool-btn" hidden><img class="em" src="assets/emoji/1f501.svg" alt=""> Replay this board (practice)</button>
       <button id="today-return-btn" class="tool-btn" hidden><img class="em" src="assets/emoji/1f4c5.svg" alt=""> Back to today's plot</button>
       <button id="again-btn" class="tool-btn"><img class="em" src="assets/emoji/1f3b2.svg" alt=""> Another plot</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ TROPHY CABINET: calendar, stats, first settings ============ -->
+<div class="results-scrim" id="cabinet-scrim" hidden>
+  <div class="cabinet-card">
+    <button id="cabinet-x" class="results-x" type="button" title="Back to the garden">✕</button>
+    <h2>Trophy cabinet <img class="em" src="assets/emoji/1f3c6.svg" alt=""></h2>
+    <div id="cabinet-shelf" class="cabinet-shelf"></div>
+    <div id="cabinet-stats" class="cabinet-stats"></div>
+    <div class="cal-head">
+      <button id="cal-prev" class="cal-nav" type="button" title="Earlier month">◂</button>
+      <span id="cal-title" class="cal-title"></span>
+      <button id="cal-next" class="cal-nav" type="button" title="Later month">▸</button>
+    </div>
+    <div class="cal-dow"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+    <div id="cal-grid" class="cal-grid"></div>
+    <div id="cal-detail" class="cal-detail" hidden></div>
+    <div class="settings-row">
+      <label class="hard-toggle">
+        <input type="checkbox" id="hardmode-toggle">
+        <span><strong>Hard mode</strong> — hide the math: points, ♥/⚠ and −1 badges, and the running tally. Sun pips and status rings stay. Hard-mode shares wear a 🎓.</span>
+      </label>
     </div>
   </div>
 </div>
