@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.8.1"; // bump on each deploy so phones can verify updates
+const VERSION = "0.8.2"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -2265,6 +2265,9 @@ function renderCalendar() {
   const byPlot = new Map(loadStore().ledger.map(e => [e.plot, e]));
   const epoch = new Date(EPOCH_Y, EPOCH_M, EPOCH_D);
   const tp = todayPlot();
+  // days before your first-ever garden aren't "missed" — they're before
+  // your story starts (and before the game's: numbering predates launch)
+  const firstPlot = byPlot.size ? Math.min(...byPlot.keys()) : tp;
   const startDow = new Date(y, m, 1).getDay();
   const daysIn = new Date(y, m + 1, 0).getDate();
   let html = "";
@@ -2280,6 +2283,7 @@ function renderCalendar() {
         body += rb ? ribbonImg(rb) : em("1f331"); // sub-45 days still grew something
         cls += " played";
       } else if (plot === tp) { cls += " open"; body += `<span class="cal-dot"></span>`; }
+      else if (plot < firstPlot) cls += " off";
       else cls += " missed";
     }
     if (plot === tp) cls += " today";
@@ -2302,9 +2306,13 @@ function showCalDetail(plot) {
   const dateTxt = plotDate(plot).toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const e = loadStore().ledger.find(x => x.plot === plot);
   if (!e) {
+    const led = loadStore().ledger;
+    const firstPlot = led.length ? Math.min(...led.map(x => x.plot)) : tp;
     box.innerHTML = plot === tp
       ? `<b>Plot #${plot} · ${dateTxt}:</b> today's plot is still waiting for its gardener.`
-      : `<b>Plot #${plot} · ${dateTxt}:</b> no garden grown this day.`;
+      : plot < firstPlot
+        ? `<b>Plot #${plot} · ${dateTxt}:</b> before your garden began.`
+        : `<b>Plot #${plot} · ${dateTxt}:</b> no garden grown this day.`;
   } else {
     const meta = SEASON_META[e.season];
     const rb = ribbonFor(e.score, e.gold);
