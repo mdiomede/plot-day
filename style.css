@@ -551,6 +551,11 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   justify-content: space-between;
   gap: 8px;
   margin: 0 2px 8px;
+  /* reserve the chip's height (24px) so the row doesn't collapse — and shift
+     the board — when neither the reroll nor the tally chip is showing (e.g.
+     a barrel placed then dug up on an otherwise-untouched practice plot, or
+     hard mode where the tally chip is hidden entirely) */
+  min-height: 1.5rem;
 }
 .board-meta .arc-label { text-align: left; margin: 0; }
 .tally-chip {
