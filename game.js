@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.9.2"; // bump on each deploy so phones can verify updates
+const VERSION = "0.9.3"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1421,12 +1421,12 @@ function svgGreenhouse(w, h) {
     : `<rect x="10" y="10" width="${mid - 10}" height="${Hp - 20}" fill="#cfe9d8" opacity=".30"/>
        <rect x="${mid}" y="10" width="${Wp - mid - 10}" height="${Hp - 20}" fill="#9ccfae" opacity=".34"/>`;
   const door = horiz // on the east gable end, square to the ridge
-    ? `<rect x="${Wp - 21}" y="${mid - 15}" width="17" height="30" rx="3.5" fill="#f7fafa"/>
-       <rect x="${Wp - 18}" y="${mid - 11}" width="11" height="22" rx="2.5" fill="#9bb8a6"/>
-       <circle cx="${Wp - 15}" cy="${mid}" r="1.7" fill="#54675c"/>`
-    : `<rect x="${mid - 15}" y="${Hp - 21}" width="30" height="17" rx="3.5" fill="#f7fafa"/>
-       <rect x="${mid - 11}" y="${Hp - 18}" width="22" height="11" rx="2.5" fill="#9bb8a6"/>
-       <circle cx="${mid}" cy="${Hp - 15}" r="1.7" fill="#54675c"/>`;
+    ? `<rect x="${Wp - 28}" y="${mid - 17}" width="24" height="34" rx="4" fill="#f7fafa"/>
+       <rect x="${Wp - 24}" y="${mid - 13}" width="16" height="26" rx="3" fill="#9bb8a6"/>
+       <circle cx="${Wp - 20}" cy="${mid}" r="1.9" fill="#54675c"/>`
+    : `<rect x="${mid - 17}" y="${Hp - 28}" width="34" height="24" rx="4" fill="#f7fafa"/>
+       <rect x="${mid - 13}" y="${Hp - 24}" width="26" height="16" rx="3" fill="#9bb8a6"/>
+       <circle cx="${mid}" cy="${Hp - 20}" r="1.9" fill="#54675c"/>`;
   return `<svg viewBox="0 0 ${Wp} ${Hp}" overflow="visible">
     <ellipse cx="${Wp / 2}" cy="${Hp - 4}" rx="${Wp / 2 - 8}" ry="6" fill="rgba(46,62,33,.18)"/>
     <defs><clipPath id="gh-pane"><rect x="10" y="10" width="${Wp - 20}" height="${Hp - 20}" rx="8"/></clipPath></defs>
