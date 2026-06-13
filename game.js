@@ -33,7 +33,7 @@ const EMOJI_ART = {
   lettuce: "1f96c", kale: "kale", wintergreen: "wintergreen",
   mushroom: "1f344", corn: "1f33d", sunflower: "1f33b",
   strawberry: "1f353", carrot: "1f955", potato: "1f954",
-  garlic: "1f9c4", brusselish: "1f966", onion: "1f9c5",
+  garlic: "1f9c4", brusselish: "1f966", onion: "1f9c5", brussels: "brussels",
 };
 
 const W = 7, H = 5;
@@ -135,14 +135,16 @@ const CATALOG = {
   winter: [ // hardy crops brave the snow; tender ones live or die by the glass
     { id: "tomato",     name: "Tomato",     emoji: "🍅", sun: 3, water: 2, pts: 12, friends: ["lettuce"], enemies: ["pepper"], tender: true,
       why: "Winter's prize — and it dies outside, full stop. Under glass, growers tuck quick lettuce between the slow tomato beds. Keep peppers apart: clustered nightshades share disease." },
-    { id: "brusselish", name: "Winter Broccoli", emoji: "🥦", sun: 2, water: 2, pts: 10, friends: ["onion", "garlic"],
-      why: "Overwintering brassicas are winter's workhorses — alliums keep their pests away." },
+    { id: "brusselish", name: "Winter Broccoli", emoji: "🥦", sun: 2, water: 2, pts: 10, friends: ["onion", "garlic"], enemies: ["brussels"],
+      why: "Overwintering brassicas are winter's workhorses — alliums keep their pests away. Keep it clear of its cousin the sprout: clustered brassicas share the same cabbage worms and clubroot." },
+    { id: "brussels",   name: "Brussels Sprouts", emoji: "🥦", sun: 2, water: 2, pts: 9, friends: ["onion", "garlic"], enemies: ["brusselish"],
+      why: "Surprise — the sprouts spiral up a waist-high stalk, sweetening after frost. Alliums mask it from aphids and cabbage moths; keep it clear of broccoli, since clustered brassicas share the same pests and clubroot." },
     { id: "pepper",     name: "Chili Pepper", emoji: "🌶️", sun: 2, water: 2, pts: 8, friends: [], enemies: ["tomato"], tender: true,
       why: "Peppers sulk below 50°F and freeze outside — greenhouse only. Tomatoes are kin: clustered nightshades share disease." },
-    { id: "garlic",     name: "Garlic",     emoji: "🧄", sun: 2, water: 1, pts: 6, friends: ["brusselish"],
-      why: "Garlic is planted into winter by tradition — and its scent shields brassicas." },
-    { id: "onion",      name: "Onion",      emoji: "🧅", sun: 2, water: 1, pts: 6, friends: ["brusselish"],
-      why: "Overwintering onions sit happily under the snow line." },
+    { id: "garlic",     name: "Garlic",     emoji: "🧄", sun: 2, water: 1, pts: 6, friends: ["brusselish", "brussels"],
+      why: "Garlic is planted into winter by tradition — and its scent shields brassicas like broccoli and sprouts." },
+    { id: "onion",      name: "Onion",      emoji: "🧅", sun: 2, water: 1, pts: 6, friends: ["brusselish", "brussels"],
+      why: "Overwintering onions sit happily under the snow line, and mask the brassicas from aphids." },
     { id: "wintergreen", name: "Winter Greens", emoji: "🥬", sun: 1, water: 1, pts: 5, friends: [],
       why: "Hardy greens that sweeten in the cold and shrug off frost." },
     { id: "lettuce",    name: "Lettuce",    emoji: "🥬", sun: 1, water: 1, pts: 5, friends: ["tomato"], tender: true,
@@ -548,9 +550,12 @@ function generatePacket() {
 
   // Water covers ~65-80% of the packet's full cost (the barrel no longer
   // adds water, it discounts neighbors). You can't grow everything.
-  // Winter ships a touch generous: shelter triage is squeeze enough.
+  // Winter used to ship generous (0.72+) on the theory that greenhouse
+  // triage was squeeze enough — but winter crops are water-cheap (mostly
+  // 1 water), so players finished with surplus and matched gold too easily.
+  // Every season now shares the band so water binds in winter too.
   const totalWater = state.packet.reduce((n, s) => n + s.qty * s.def.water, 0);
-  const frac = (state.season === "winter" ? 0.72 : 0.65) + r() * 0.15;
+  const frac = 0.65 + r() * 0.15;
   state.waterMax = Math.max(5, Math.round(totalWater * frac));
   state.waterLeft = state.waterMax;
   state.barrelStock = 1; // one rain barrel per board: discounts neighbors, costs a tile
