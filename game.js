@@ -137,7 +137,7 @@ const CATALOG = {
       why: "Winter's prize — and it dies outside, full stop. Under glass, growers tuck quick lettuce between the slow tomato beds. Keep peppers apart: clustered nightshades share disease." },
     { id: "brusselish", name: "Winter Broccoli", emoji: "🥦", sun: 2, water: 2, pts: 10, friends: ["onion", "garlic"], enemies: ["brussels"],
       why: "Overwintering brassicas are winter's workhorses — alliums keep their pests away. Keep it clear of its cousin the sprout: clustered brassicas share the same cabbage worms and clubroot." },
-    { id: "brussels",   name: "Brussels Sprouts", emoji: "🥦", sun: 2, water: 2, pts: 9, friends: ["onion", "garlic"], enemies: ["brusselish"],
+    { id: "brussels",   name: "Brussels Sprouts", short: "Sprouts", emoji: "🥦", sun: 2, water: 2, pts: 9, friends: ["onion", "garlic"], enemies: ["brusselish"],
       why: "Surprise — the sprouts spiral up a waist-high stalk, sweetening after frost. Alliums mask it from aphids and cabbage moths; keep it clear of broccoli, since clustered brassicas share the same pests and clubroot." },
     { id: "pepper",     name: "Chili Pepper", emoji: "🌶️", sun: 2, water: 2, pts: 8, friends: [], enemies: ["tomato"], tender: true,
       why: "Peppers sulk below 50°F and freeze outside — greenhouse only. Tomatoes are kin: clustered nightshades share disease." },
@@ -1745,7 +1745,7 @@ function renderPacket() {
     btn.innerHTML = `
       ${cardFace}
       <span>
-        <span class="seed-name">${d.name}</span>
+        <span class="seed-name">${d.short || d.name}</span>
         <span class="seed-stats">${bits.map(b => `<span>${b}</span>`).join("")}</span>
       </span>
       <span class="seed-qty">×${slot.qty}</span>`;
