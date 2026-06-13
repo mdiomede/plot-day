@@ -1423,13 +1423,19 @@ function svgGreenhouse(w, h) {
   // The gable edge IS the wall (straight-on view). The door is a panel set
   // INTO the wall's outer face: thinner than the wall so it never punches
   // through into the interior, flush with the outer edge, framed by white
-  // wall on its inner side and both ends. Green reads now that it sits in
-  // the white wall rather than against the green interior. Side handle.
+  // wall on its inner side and both ends. Painted in the board's idiom — no
+  // outline; a darker green recess, a mid-green face, a pale lit edge on the
+  // upper-left, and a soft handle dot. (An earlier hard stroke + near-black
+  // handle was the only outlined thing on the board and read as a sticker.)
   const door = horiz // east gable: the door runs vertically down the wall
-    ? `<rect x="${Wp - 7}" y="${mid - 22}" width="6.5" height="44" rx="1.75" fill="#86b89b" stroke="#5f8a72" stroke-width="0.9"/>
-       <rect x="${Wp - 5}" y="${mid + 10}" width="2" height="9" rx="1" fill="#3f5a4b"/>`
-    : `<rect x="${mid - 22}" y="${Hp - 7}" width="44" height="6.5" rx="1.75" fill="#86b89b" stroke="#5f8a72" stroke-width="0.9"/>
-       <rect x="${mid + 10}" y="${Hp - 5}" width="9" height="2" rx="1" fill="#3f5a4b"/>`;
+    ? `<rect x="${Wp - 7.5}" y="${mid - 23}" width="7.5" height="46" rx="3.5" fill="#7aa78d"/>
+       <rect x="${Wp - 6.25}" y="${mid - 21}" width="5.25" height="42" rx="2.5" fill="#9cc6ac"/>
+       <rect x="${Wp - 6.25}" y="${mid - 21}" width="1.8" height="42" rx="0.9" fill="#c2dccb" opacity=".6"/>
+       <circle cx="${Wp - 3.4}" cy="${mid + 12}" r="1.7" fill="#5f8a72"/>`
+    : `<rect x="${mid - 23}" y="${Hp - 7.5}" width="46" height="7.5" rx="3.5" fill="#7aa78d"/>
+       <rect x="${mid - 21}" y="${Hp - 6.25}" width="42" height="5.25" rx="2.5" fill="#9cc6ac"/>
+       <rect x="${mid - 21}" y="${Hp - 6.25}" width="42" height="1.8" rx="0.9" fill="#c2dccb" opacity=".6"/>
+       <circle cx="${mid + 12}" cy="${Hp - 3.4}" r="1.7" fill="#5f8a72"/>`;
   return `<svg viewBox="0 0 ${Wp} ${Hp}" overflow="visible">
     <ellipse cx="${Wp / 2}" cy="${Hp - 4}" rx="${Wp / 2 - 8}" ry="6" fill="rgba(46,62,33,.18)"/>
     <defs><clipPath id="gh-pane"><rect x="10" y="10" width="${Wp - 20}" height="${Hp - 20}" rx="8"/></clipPath></defs>
@@ -2270,11 +2276,14 @@ function buildShareText(score) {
   // shareGridCells. Practice plots are random, so they share full detail.
   const grid = shareGridCells().map(r => r.join("")).join("\n");
   const skill = score > state.gold ? "BEAT GOLD 🏆" : `Skill ${Math.round((100 * score) / state.gold)}`;
-  // dated like Wordle; the streak stays on your own results screen — shares
-  // shouldn't make streakless friends feel behind
-  const date = state.dayNum > 0
-    ? ` · ${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
-    : "";
+  // Lead with the game's name + plot number, Wordle-style ("Wordle 1,234").
+  // The number IS the day, so no date dangles off the end of the line — and
+  // a dateless share keeps streakless friends from feeling behind. seedLabel
+  // ("Plot #42" / "...· replay" / "Practice plot") drives the gold seed, so
+  // we re-skin it here for the share rather than touching the value itself.
+  const title = state.seedLabel.startsWith("Plot #")
+    ? "Plot Day #" + state.seedLabel.slice(6)
+    : "Plot Day · Practice";
   // no Gold/Par line: skill already encodes the benchmark, and to friends
   // it was just extra text (the results screen keeps the private ladder)
   const rb = ribbonFor(score, state.gold);
@@ -2282,7 +2291,7 @@ function buildShareText(score) {
   // 🎓 marks a score earned without the math badges — a locked daily reads
   // the mode it was locked under, a practice share reads the live setting
   const hard = state.dayNum > 0 ? !!(todayEntry() || {}).hard : !!loadStore().hardMode;
-  return `${state.seedLabel} · ${meta.label}${date}\n🏆 ${score} pts · ${skill}${hard ? " · 🎓 hard" : ""}\n${ribbonLine}${grid}\n`;
+  return `${title} · ${meta.label}\n🏆 ${score} pts · ${skill}${hard ? " · 🎓 hard" : ""}\n${ribbonLine}${grid}\n`;
 }
 
 $("#copy-btn").addEventListener("click", async () => {
