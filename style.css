@@ -190,6 +190,13 @@ h1, h2, .big-score, .finish-btn, .season-badge {
     #b9c3c4;
   background-size: 47px 53px, 61px 41px, 53px 67px, auto;
 }
+/* greenhouse interior reads as a warm GROWING zone — green tiles vs the
+   pale snow outside (a playtester read the glass as ice). Sun gradient is
+   preserved so shelter triage on sun still reads at a glance. */
+.board.winter .tile.inside[data-sun="3"] { background-color: #d4ebbf; }
+.board.winter .tile.inside[data-sun="2"] { background-color: #bfe0a8; }
+.board.winter .tile.inside[data-sun="1"] { background-color: #a6d094; }
+.board.winter .tile.inside[data-sun="0"] { background-color: #8fbd84; }
 
 /* illustrated structures drawn over the grid */
 .scene {
