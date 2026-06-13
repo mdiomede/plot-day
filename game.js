@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.9.7"; // bump on each deploy so phones can verify updates
+const VERSION = "0.9.8"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1426,10 +1426,10 @@ function svgGreenhouse(w, h) {
   // wall on its inner side and both ends. Green reads now that it sits in
   // the white wall rather than against the green interior. Side handle.
   const door = horiz // east gable: the door runs vertically down the wall
-    ? `<rect x="${Wp - 8.5}" y="${mid - 26}" width="8" height="52" rx="2" fill="#86b89b" stroke="#5f8a72" stroke-width="1"/>
-       <rect x="${Wp - 6}" y="${mid + 13}" width="2.5" height="11" rx="1.25" fill="#3f5a4b"/>`
-    : `<rect x="${mid - 26}" y="${Hp - 8.5}" width="52" height="8" rx="2" fill="#86b89b" stroke="#5f8a72" stroke-width="1"/>
-       <rect x="${mid + 13}" y="${Hp - 6}" width="11" height="2.5" rx="1.25" fill="#3f5a4b"/>`;
+    ? `<rect x="${Wp - 7}" y="${mid - 22}" width="6.5" height="44" rx="1.75" fill="#86b89b" stroke="#5f8a72" stroke-width="0.9"/>
+       <rect x="${Wp - 5}" y="${mid + 10}" width="2" height="9" rx="1" fill="#3f5a4b"/>`
+    : `<rect x="${mid - 22}" y="${Hp - 7}" width="44" height="6.5" rx="1.75" fill="#86b89b" stroke="#5f8a72" stroke-width="0.9"/>
+       <rect x="${mid + 10}" y="${Hp - 5}" width="9" height="2" rx="1" fill="#3f5a4b"/>`;
   return `<svg viewBox="0 0 ${Wp} ${Hp}" overflow="visible">
     <ellipse cx="${Wp / 2}" cy="${Hp - 4}" rx="${Wp / 2 - 8}" ry="6" fill="rgba(46,62,33,.18)"/>
     <defs><clipPath id="gh-pane"><rect x="10" y="10" width="${Wp - 20}" height="${Hp - 20}" rx="8"/></clipPath></defs>
