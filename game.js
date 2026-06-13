@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.9.0"; // bump on each deploy so phones can verify updates
+const VERSION = "0.9.1"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1413,11 +1413,20 @@ function svgGreenhouse(w, h) {
        <rect x="12" y="${mid - 6}" width="${Wp - 24}" height="5" rx="2.5" fill="#fdfefe"/>`
     : `<rect x="${mid - 6}" y="12" width="12" height="${Hp - 24}" rx="6" fill="#eef5f6"/>
        <rect x="${mid - 6}" y="12" width="5" height="${Hp - 24}" rx="2.5" fill="#fdfefe"/>`;
+  // glass-GREEN panes, not ice-blue: a playtester read the blue version as
+  // a frozen pond on the snowy board. Green glass + a door = building.
   const panes = horiz // the half facing the light reads a touch lighter
-    ? `<rect x="10" y="10" width="${Wp - 20}" height="${mid - 10}" fill="#d8edf6" opacity=".28"/>
-       <rect x="10" y="${mid}" width="${Wp - 20}" height="${Hp - mid - 10}" fill="#9fcfe2" opacity=".32"/>`
-    : `<rect x="10" y="10" width="${mid - 10}" height="${Hp - 20}" fill="#d8edf6" opacity=".28"/>
-       <rect x="${mid}" y="10" width="${Wp - mid - 10}" height="${Hp - 20}" fill="#9fcfe2" opacity=".32"/>`;
+    ? `<rect x="10" y="10" width="${Wp - 20}" height="${mid - 10}" fill="#cfe9d8" opacity=".30"/>
+       <rect x="10" y="${mid}" width="${Wp - 20}" height="${Hp - mid - 10}" fill="#9ccfae" opacity=".34"/>`
+    : `<rect x="10" y="10" width="${mid - 10}" height="${Hp - 20}" fill="#cfe9d8" opacity=".30"/>
+       <rect x="${mid}" y="10" width="${Wp - mid - 10}" height="${Hp - 20}" fill="#9ccfae" opacity=".34"/>`;
+  const door = horiz // on the east gable end, square to the ridge
+    ? `<rect x="${Wp - 16}" y="${mid - 11}" width="12" height="22" rx="3" fill="#f7fafa"/>
+       <rect x="${Wp - 14}" y="${mid - 8}" width="8" height="16" rx="2" fill="#9bb8a6"/>
+       <circle cx="${Wp - 12}" cy="${mid}" r="1.4" fill="#54675c"/>`
+    : `<rect x="${mid - 11}" y="${Hp - 16}" width="22" height="12" rx="3" fill="#f7fafa"/>
+       <rect x="${mid - 8}" y="${Hp - 14}" width="16" height="8" rx="2" fill="#9bb8a6"/>
+       <circle cx="${mid}" cy="${Hp - 12}" r="1.4" fill="#54675c"/>`;
   return `<svg viewBox="0 0 ${Wp} ${Hp}" overflow="visible">
     <ellipse cx="${Wp / 2}" cy="${Hp - 4}" rx="${Wp / 2 - 8}" ry="6" fill="rgba(46,62,33,.18)"/>
     <defs><clipPath id="gh-pane"><rect x="10" y="10" width="${Wp - 20}" height="${Hp - 20}" rx="8"/></clipPath></defs>
@@ -1431,6 +1440,7 @@ function svgGreenhouse(w, h) {
     <path d="${snow}" fill="#ffffff" opacity=".96"/>
     <rect x="6" y="6" width="${Wp - 12}" height="${Hp - 12}" rx="11" fill="none" stroke="#c9dde2" stroke-width="11"/>
     <rect x="6" y="6" width="${Wp - 12}" height="${Hp - 12}" rx="11" fill="none" stroke="#eff6f7" stroke-width="7"/>
+    ${door}
     <ellipse cx="${Wp - 28}" cy="8" rx="16" ry="5" fill="#ffffff" opacity=".9"/>
     <ellipse cx="26" cy="${Hp - 8}" rx="13" ry="4.5" fill="#ffffff" opacity=".85"/>
   </svg>`;
@@ -1535,6 +1545,7 @@ function renderHeader() {
   $("#day-label").textContent = state.seedLabel + date;
   $("#arc-label").innerHTML = `${em("1f31e")} ` + SUN_ARCS[state.sunArc].label;
   boardEl.classList.toggle("winter", state.season === "winter");
+  document.body.classList.toggle("season-winter", state.season === "winter"); // winter guide lines
 }
 
 function renderBoard() {
