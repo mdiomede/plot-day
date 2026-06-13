@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.9.4"; // bump on each deploy so phones can verify updates
+const VERSION = "0.9.5"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -1420,16 +1420,15 @@ function svgGreenhouse(w, h) {
        <rect x="10" y="${mid}" width="${Wp - 20}" height="${Hp - mid - 10}" fill="#9ccfae" opacity=".34"/>`
     : `<rect x="10" y="10" width="${mid - 10}" height="${Hp - 20}" fill="#cfe9d8" opacity=".30"/>
        <rect x="${mid}" y="10" width="${Wp - mid - 10}" height="${Hp - 20}" fill="#9ccfae" opacity=".34"/>`;
-  // top-down door: a WIDE sliding panel laid ALONG the gable edge (not a
-  // portrait door standing in it), handle a nub near one end — sells the
-  // straight-down view that distinguishes the glasshouse from the houses
+  // top-down door HUNG ON THE OUTSIDE of the gable: it straddles the outer
+  // frame edge and breaks the frame line (no white backing — the frame's
+  // own border separates it from the interior glass), handle a side nub.
+  // Sells the straight-down view that distinguishes glasshouse from houses.
   const door = horiz // east gable: the door runs vertically down the edge
-    ? `<rect x="${Wp - 13}" y="${mid - 33}" width="12" height="66" rx="4" fill="#f3f8f6"/>
-       <rect x="${Wp - 10.5}" y="${mid - 29}" width="7" height="58" rx="3" fill="#a4c3b1"/>
-       <rect x="${Wp - 16}" y="${mid + 17}" width="3.5" height="13" rx="1.75" fill="#5c6f64"/>`
-    : `<rect x="${mid - 33}" y="${Hp - 13}" width="66" height="12" rx="4" fill="#f3f8f6"/>
-       <rect x="${mid - 29}" y="${Hp - 10.5}" width="58" height="7" rx="3" fill="#a4c3b1"/>
-       <rect x="${mid + 17}" y="${Hp - 16}" width="13" height="3.5" rx="1.75" fill="#5c6f64"/>`;
+    ? `<rect x="${Wp - 7}" y="${mid - 30}" width="11" height="60" rx="4" fill="#9cc0aa" stroke="#79a087" stroke-width="1.4"/>
+       <rect x="${Wp - 4}" y="${mid + 14}" width="3" height="13" rx="1.5" fill="#56695e"/>`
+    : `<rect x="${mid - 30}" y="${Hp - 7}" width="60" height="11" rx="4" fill="#9cc0aa" stroke="#79a087" stroke-width="1.4"/>
+       <rect x="${mid + 14}" y="${Hp - 4}" width="13" height="3" rx="1.5" fill="#56695e"/>`;
   return `<svg viewBox="0 0 ${Wp} ${Hp}" overflow="visible">
     <ellipse cx="${Wp / 2}" cy="${Hp - 4}" rx="${Wp / 2 - 8}" ry="6" fill="rgba(46,62,33,.18)"/>
     <defs><clipPath id="gh-pane"><rect x="10" y="10" width="${Wp - 20}" height="${Hp - 20}" rx="8"/></clipPath></defs>
