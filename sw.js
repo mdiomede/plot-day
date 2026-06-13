@@ -2,7 +2,7 @@
    Shell files (html/css/js) are network-first so deploys land on next
    launch; assets (emoji, art) are cache-first since they rarely change. */
 
-const CACHE = "plotday-shell-v1";
+const CACHE = "plotday-shell-v2";
 const CORE = ["./", "./index.html", "./style.css", "./game.js", "./manifest.webmanifest"];
 
 self.addEventListener("install", e => {
