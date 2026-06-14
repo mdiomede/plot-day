@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.10.9"; // bump on each deploy so phones can verify updates
+const VERSION = "0.10.10"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -41,6 +41,10 @@ const W = 7, H = 5;
 // number roll over together at the player's local midnight (Wordle-style).
 // (Epoch chosen so historical locked entries keep their numbers.)
 const EPOCH_Y = 2026, EPOCH_M = 4, EPOCH_D = 31;
+// The game went live June 10, 2026 (Plot #11). Plots #1–#10 (May 31–June 9)
+// exist only so the numbering lines up with pre-calendar locked entries —
+// they predate the game, so the archive must NOT offer them as playable days.
+const FIRST_PLOT = Math.round((+new Date(2026, 5, 10) - +new Date(EPOCH_Y, EPOCH_M, EPOCH_D)) / 86400000) + 1;
 
 const PHASES = ["am", "noon", "pm"];
 
@@ -2504,6 +2508,7 @@ function renderCalendar() {
         body += rb ? ribbonImg(rb) : em("1f331"); // sub-45 days still grew something
         cls += " played";
       } else if (plot === tp) { cls += " open"; body += `<span class="cal-dot"></span>`; }
+      else if (plot < FIRST_PLOT) cls += " off"; // before the game existed — not playable
       else cls += " missed"; // any unplayed past day — playable from the archive
     }
     if (plot === tp) cls += " today";
@@ -2526,14 +2531,19 @@ function showCalDetail(plot) {
   const dateTxt = plotDate(plot).toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const e = loadStore().ledger.find(x => x.plot === plot);
   if (!e) {
-    // every past day is now playable from the archive (catch-up for new
-    // players); the board regenerates identically from its date
-    const lead = plot === tp
-      ? "today's plot is waiting for its gardener."
-      : "an unplayed day — grow it from the archive.";
-    box.innerHTML = `<b>Plot #${plot} · ${dateTxt}:</b> ${lead} ` +
-      `<button type="button" class="cal-play" data-plot="${plot}">${plot === tp ? "Play today's plot" : "Play this plot"}</button>`;
-    box.querySelector(".cal-play").addEventListener("click", () => playArchive(plot));
+    if (plot < FIRST_PLOT) {
+      // #1–#10 predate the game (numbering only) — informational, no Play
+      box.innerHTML = `<b>Plot #${plot} · ${dateTxt}:</b> before Plot Day existed.`;
+    } else {
+      // past days are playable from the archive (catch-up for new players);
+      // the board regenerates identically from its date
+      const lead = plot === tp
+        ? "today's plot is waiting for its gardener."
+        : "an unplayed day — grow it from the archive.";
+      box.innerHTML = `<b>Plot #${plot} · ${dateTxt}:</b> ${lead} ` +
+        `<button type="button" class="cal-play" data-plot="${plot}">${plot === tp ? "Play today's plot" : "Play this plot"}</button>`;
+      box.querySelector(".cal-play").addEventListener("click", () => playArchive(plot));
+    }
   } else {
     const meta = SEASON_META[e.season];
     const rb = ribbonFor(e.score, e.gold);
@@ -2568,6 +2578,7 @@ function openCabinet() {
 // Archive: load a past day's plot (or today's, if its cell was tapped). The
 // board regenerates byte-identical from its date — see newGame's date param.
 function playArchive(plot) {
+  if (plot < FIRST_PLOT || plot > todayPlot()) return; // pre-launch / future: not playable
   $("#cabinet-scrim").hidden = true;
   newGame({ daily: true, date: plot === todayPlot() ? null : plotDate(plot) });
 }
