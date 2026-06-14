@@ -657,6 +657,9 @@ h1, h2, .big-score, .finish-btn, .season-badge {
   gap: 0 8px;
 }
 .seed-stats > span { white-space: nowrap; }
+/* the companion heart: the game's rose-pink (matching the board's ♥ badge),
+   sized up to its crop-icon neighbours so it reads as "love", not grey lint */
+.seed-stats .heart { color: #d4566f; font-size: 1.15em; vertical-align: -.06em; }
 .seed-qty {
   font-family: "Baloo 2", cursive;
   font-weight: 700;

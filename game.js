@@ -1735,7 +1735,7 @@ function renderPacket() {
     const hearts = friendArt + treeArt;
     const foes = (d.enemies || []).map(cropIcon).join("");
     const bits = [`${em("2600")}${"●".repeat(d.sun) || "–"}`, `${em("1f4a7")}${d.water}`, `${em("1f3c6")}${d.pts}`];
-    if (hearts) bits.push(`♥${hearts}`);
+    if (hearts) bits.push(`<span class="heart">♥</span>${hearts}`);
     if (foes) bits.push(`${em("1f6ab")}${foes}`);
     if (d.tall) bits.push(`TALL`);
     if (d.tender) bits.push(`TENDER`);
