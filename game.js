@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.9.8"; // bump on each deploy so phones can verify updates
+const VERSION = "0.10.8"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -2831,3 +2831,44 @@ else startTutorial(true); // first visit: a guided tour on a scripted board
 // offline play + instant loads once installed (no-op on file:// dev)
 if ("serviceWorker" in navigator && location.protocol !== "file:")
   navigator.serviceWorker.register("sw.js").catch(() => { /* offline still optional */ });
+
+/* ---------- install nudge: keep returning players' data safe ----------
+   On iOS, Safari evicts a browser TAB's localStorage after ~7 idle days, but
+   a Home-Screen install is exempt — so an un-installed daily player can
+   silently lose their trophy cabinet. Android/Chrome fire a real install
+   prompt we trigger from the "Add" button; iOS has no prompt API, so we show
+   the Share→Add hint instead. Only nudges players who've finished a daily
+   (something to lose), and never again once installed or dismissed. */
+let deferredInstall = null;
+const inStandalone = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+const isIOSDevice = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+  (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1); // iPadOS reports as Mac
+
+function maybeShowInstallNudge() {
+  if (inStandalone) return;                       // already an installed app
+  const s = loadStore();
+  if (s.installed || s.installDismissed) return;  // installed, or they said no
+  if (!(s.ledger && s.ledger.length)) return;     // only once there's a cabinet to protect
+  if (!deferredInstall && !isIOSDevice) return;   // nothing to offer on this platform
+  const n = $("#install-nudge");
+  n.classList.toggle("ios", !deferredInstall && isIOSDevice);
+  n.hidden = false;
+}
+
+addEventListener("beforeinstallprompt", e => { e.preventDefault(); deferredInstall = e; maybeShowInstallNudge(); });
+addEventListener("appinstalled", () => {
+  const s = loadStore(); s.installed = 1; saveStore(s);
+  $("#install-nudge").hidden = true;
+});
+$("#install-go").addEventListener("click", async () => {
+  if (!deferredInstall) return;
+  deferredInstall.prompt();
+  try { await deferredInstall.userChoice; } catch { /* dismissed */ }
+  deferredInstall = null;
+  $("#install-nudge").hidden = true;
+});
+$("#install-x").addEventListener("click", () => {
+  const s = loadStore(); s.installDismissed = 1; saveStore(s);
+  $("#install-nudge").hidden = true;
+});
+maybeShowInstallNudge(); // iOS (no event) + Android if the prompt already fired
