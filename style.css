@@ -658,8 +658,10 @@ h1, h2, .big-score, .finish-btn, .season-badge {
 }
 .seed-stats > span { white-space: nowrap; }
 /* the companion heart: the game's rose-pink (matching the board's ♥ badge),
-   sized up to its crop-icon neighbours so it reads as "love", not grey lint */
-.seed-stats .heart { color: #d4566f; font-size: 1.15em; vertical-align: -.06em; }
+   sized to match the .82rem emoji/icons beside it (the foe 🚫, the crop
+   icons). A FIXED rem — not em — so it stays icon-sized on the smaller
+   mobile stats font instead of shrinking with the text. */
+.seed-stats .heart { color: #d4566f; font-size: 1.15rem; vertical-align: -.16rem; }
 .seed-qty {
   font-family: "Baloo 2", cursive;
   font-weight: 700;
