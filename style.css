@@ -1260,6 +1260,21 @@ body.season-winter .guide .winter-note { display: grid; }
 .cal-detail[hidden] { display: none; }
 .cal-detail .em { width: .85rem; height: .85rem; vertical-align: -.12rem; }
 .cal-detail-ribbon { display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; }
+/* archive: "play this plot" action inside the calendar detail card */
+.cal-play {
+  display: inline-block;
+  margin-top: 6px;
+  font-family: "Baloo 2", cursive;
+  font-weight: 700;
+  font-size: .8rem;
+  background: #5d8f4e;
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  padding: 4px 14px;
+  cursor: pointer;
+}
+.cal-play:active { transform: translateY(1px); }
 .cal-detail .ribbon-svg { width: 20px; height: 20px; animation: none; filter: none; vertical-align: -5px; }
 .settings-row { border-top: 2px dashed var(--paper-deep); margin-top: 14px; padding-top: 11px; }
 .hard-toggle {

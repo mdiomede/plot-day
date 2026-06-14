@@ -7,7 +7,7 @@
 
 /* ---------- constants ---------- */
 
-const VERSION = "0.10.8"; // bump on each deploy so phones can verify updates
+const VERSION = "0.10.9"; // bump on each deploy so phones can verify updates
 
 // Prototype switch: while true, the daily never locks (test freely).
 // Flip to false for release: one scored attempt per day, streaks count.
@@ -226,8 +226,8 @@ function seasonForDate(d) {
   return "winter";
 }
 
-function newGame({ daily = true, season = null, replay = false } = {}) {
-  const today = new Date();
+function newGame({ daily = true, season = null, replay = false, date = null } = {}) {
+  const today = date || new Date(); // archive play passes a past day's date
   playerSnap = null; // any bot-view snapshot belongs to a dead board now —
   // without this, jumping to a new plot FROM the bot's garden left Finish
   // resurrecting the old board's garden and results (found by playtest)
@@ -349,6 +349,7 @@ function lockDaily() {
     skill: Math.round((100 * score) / state.gold),
     cells, barrel, pruned: prunedCells, waterLeft: state.waterLeft,
     hard: store.hardMode ? 1 : 0, // the mode the day was locked under
+    archived: state.dayNum < todayPlot() ? 1 : 0, // played late from the archive
     at: Date.now(),
   });
   saveStore(store);
@@ -374,7 +375,8 @@ function restoreLockedDaily(e) {
 }
 
 function currentStreak() {
-  const plots = new Set(loadStore().ledger.map(e => e.plot));
+  // archive catch-up plays don't count — a streak is consecutive REAL days
+  const plots = new Set(loadStore().ledger.filter(e => !e.archived).map(e => e.plot));
   let s = 0, d = state.dayNum;
   while (d > 0 && plots.has(d)) { s++; d--; }
   return s;
@@ -1554,7 +1556,7 @@ function renderHeader() {
   badge.className = "season-badge " + meta.cls;
   // the date sits beside the plot number — "one puzzle a day" made visible
   const date = state.dayNum > 0
-    ? ` · ${new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
+    ? ` · ${plotDate(state.dayNum).toLocaleDateString(undefined, { month: "short", day: "numeric" })}`
     : "";
   $("#day-label").textContent = state.seedLabel + date;
   $("#arc-label").innerHTML = `${em("1f31e")} ` + SUN_ARCS[state.sunArc].label;
@@ -2206,13 +2208,19 @@ function showResults() {
   $("#results-tally").innerHTML =
     `<div>${em("1f31f")} ${thrive} thriving · ${em("1f605")} ${ok} hanging on · ${em("1f480")} ${dead} lost</div>` +
     (tallyRow2.length ? `<div>${tallyRow2.join(" · ")}</div>` : "");
+  // an archive play is a past day grown late: it came from the calendar, so
+  // it heads back THERE (not "today's plot"), and it never touches the streak
+  const isArchive = state.dayNum > 0 && state.dayNum < todayPlot();
   $("#replay-btn").hidden = state.dayNum === 0; // replays/practice can't re-replay
   $("#tend-btn").hidden = state.dayNum !== 0;   // practice only: dailies are locked
-  // practice & replay results offer the way home — finishing a replay was
-  // a dead end (the only exit was knowing the Today button existed)
-  $("#today-return-btn").hidden = state.dayNum !== 0;
+  // practice, replay & archive results offer the way home
+  const homeBtn = $("#today-return-btn");
+  homeBtn.hidden = !(state.dayNum === 0 || isArchive);
+  homeBtn.innerHTML = `<img class="em" src="assets/emoji/1f4c5.svg" alt=""> ` +
+    (isArchive ? "Back to the calendar" : "Back to today's plot");
+  homeBtn.dataset.mode = isArchive ? "calendar" : "today";
   const streakEl = $("#streak-line");
-  if (state.dayNum > 0) {
+  if (state.dayNum > 0 && !isArchive) {
     const led = loadStore().ledger;
     streakEl.innerHTML = `${em("1f525")} ${currentStreak()}-day streak · ${em("1f4da")} ${led.length} ${led.length === 1 ? "plot" : "plots"} grown`;
     streakEl.hidden = false;
@@ -2386,7 +2394,10 @@ $("#replay-btn").addEventListener("click", () => {
 });
 $("#today-return-btn").addEventListener("click", () => {
   $("#results-scrim").hidden = true;
-  newGame({ daily: true }); // restores a locked daily read-only
+  // archive plays go back to the calendar they came from; practice/replay
+  // head to today's plot (restoring a locked daily read-only)
+  if ($("#today-return-btn").dataset.mode === "calendar") openCabinet();
+  else newGame({ daily: true });
 });
 
 /* ---------- practice / dev buttons ---------- */
@@ -2478,9 +2489,6 @@ function renderCalendar() {
   const byPlot = new Map(loadStore().ledger.map(e => [e.plot, e]));
   const epoch = new Date(EPOCH_Y, EPOCH_M, EPOCH_D);
   const tp = todayPlot();
-  // days before your first-ever garden aren't "missed" — they're before
-  // your story starts (and before the game's: numbering predates launch)
-  const firstPlot = byPlot.size ? Math.min(...byPlot.keys()) : tp;
   const startDow = new Date(y, m, 1).getDay();
   const daysIn = new Date(y, m + 1, 0).getDate();
   let html = "";
@@ -2496,8 +2504,7 @@ function renderCalendar() {
         body += rb ? ribbonImg(rb) : em("1f331"); // sub-45 days still grew something
         cls += " played";
       } else if (plot === tp) { cls += " open"; body += `<span class="cal-dot"></span>`; }
-      else if (plot < firstPlot) cls += " off";
-      else cls += " missed";
+      else cls += " missed"; // any unplayed past day — playable from the archive
     }
     if (plot === tp) cls += " today";
     html += `<button type="button" class="${cls}" data-plot="${plot}">${body}</button>`;
@@ -2519,13 +2526,14 @@ function showCalDetail(plot) {
   const dateTxt = plotDate(plot).toLocaleDateString(undefined, { month: "short", day: "numeric" });
   const e = loadStore().ledger.find(x => x.plot === plot);
   if (!e) {
-    const led = loadStore().ledger;
-    const firstPlot = led.length ? Math.min(...led.map(x => x.plot)) : tp;
-    box.innerHTML = plot === tp
-      ? `<b>Plot #${plot} · ${dateTxt}:</b> today's plot is still waiting for its gardener.`
-      : plot < firstPlot
-        ? `<b>Plot #${plot} · ${dateTxt}:</b> before your garden began.`
-        : `<b>Plot #${plot} · ${dateTxt}:</b> no garden grown this day.`;
+    // every past day is now playable from the archive (catch-up for new
+    // players); the board regenerates identically from its date
+    const lead = plot === tp
+      ? "today's plot is waiting for its gardener."
+      : "an unplayed day — grow it from the archive.";
+    box.innerHTML = `<b>Plot #${plot} · ${dateTxt}:</b> ${lead} ` +
+      `<button type="button" class="cal-play" data-plot="${plot}">${plot === tp ? "Play today's plot" : "Play this plot"}</button>`;
+    box.querySelector(".cal-play").addEventListener("click", () => playArchive(plot));
   } else {
     const meta = SEASON_META[e.season];
     const rb = ribbonFor(e.score, e.gold);
@@ -2547,8 +2555,7 @@ function calShift(delta) {
   renderCalendar();
 }
 
-$("#cabinet-btn").addEventListener("click", () => {
-  if (state.tutorial) return tutNudge();
+function openCabinet() {
   const now = new Date();
   calCursor = { y: now.getFullYear(), m: now.getMonth() };
   $("#hardmode-toggle").checked = !!loadStore().hardMode;
@@ -2557,6 +2564,16 @@ $("#cabinet-btn").addEventListener("click", () => {
   $("#cal-detail").hidden = true;
   $("#cabinet-scrim").hidden = false;
   document.querySelector(".cabinet-card").scrollTop = 0; // same staleness as results
+}
+// Archive: load a past day's plot (or today's, if its cell was tapped). The
+// board regenerates byte-identical from its date — see newGame's date param.
+function playArchive(plot) {
+  $("#cabinet-scrim").hidden = true;
+  newGame({ daily: true, date: plot === todayPlot() ? null : plotDate(plot) });
+}
+$("#cabinet-btn").addEventListener("click", () => {
+  if (state.tutorial) return tutNudge();
+  openCabinet();
 });
 $("#cabinet-x").addEventListener("click", () => { $("#cabinet-scrim").hidden = true; });
 $("#cal-prev").addEventListener("click", () => calShift(-1));
