@@ -116,7 +116,7 @@ const CATALOG = {
     { id: "mushroom",   name: "Mushroom",   emoji: "🍄", sun: 0, water: 1, pts: 7, friends: [], lovesTrees: true,
       why: "Many woodland fungi partner with living tree roots (mycorrhiza) — plant beside a tree for a bonus." },
     { id: "corn",       name: "Corn",       emoji: "🌽", sun: 3, water: 2, pts: 8, friends: ["pumpkin"], enemies: ["tomato"], tall: true,
-      why: "Two of the Three Sisters — Cornell trials show the trio outyields monoculture. Keep corn away from tomatoes: corn earworm IS the tomato fruitworm." },
+      why: "Two of the Three Sisters — corn is the trellis, squash shades the soil (the third sister, beans, fixes the nitrogen). Keep corn away from tomatoes: corn earworm IS the tomato fruitworm." },
   ],
   fall: [
     { id: "pumpkin",    name: "Pumpkin",    emoji: "🎃", sun: 3, water: 3, pts: 14, friends: [],
